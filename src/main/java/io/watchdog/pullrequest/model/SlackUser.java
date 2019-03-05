@@ -8,12 +8,14 @@ import lombok.experimental.FieldDefaults;
  */
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SlackUser extends User {
 
     String email;
 
+    @Builder
+    public SlackUser(String username, String name, String email) {
+        super(username, name);
+        this.email = email;
+    }
 }

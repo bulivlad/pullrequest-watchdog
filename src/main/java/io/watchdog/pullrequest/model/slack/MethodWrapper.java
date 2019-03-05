@@ -1,4 +1,4 @@
-package io.watchdog.pullrequest.model;
+package io.watchdog.pullrequest.model.slack;
 
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 /**
  * @author vladclaudiubulimac on 06/03/2018.
  */
+
 @Data
 @Builder
 @EqualsAndHashCode

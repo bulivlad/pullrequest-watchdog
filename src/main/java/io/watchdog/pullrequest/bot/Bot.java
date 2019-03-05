@@ -1,7 +1,7 @@
 package io.watchdog.pullrequest.bot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.watchdog.pullrequest.model.MethodWrapper;
+import io.watchdog.pullrequest.model.slack.MethodWrapper;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
 import io.watchdog.pullrequest.util.ClassesUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -231,7 +231,6 @@ public abstract class Bot {
     public final void reply(WebSocketSession session, Event event, Message reply) {
         try {
             reply.setType(EventType.MESSAGE.name().toLowerCase());
-            reply.setText(encode(reply.getText()));
             if (reply.getChannel() == null && event.getChannelId() != null) {
                 reply.setChannel(event.getChannelId());
             }

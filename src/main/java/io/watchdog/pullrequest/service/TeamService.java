@@ -32,6 +32,10 @@ public class TeamService {
         return teamRepository.findSlackTeamsByChannel(channel);
     }
 
+    public List<SlackTeam> getAllTeamsWithScheduleExpression() {
+        return teamRepository.findAllByCheckingScheduleIsNotNull();
+    }
+
     public SlackTeam saveTeam(SlackTeam slackTeam) {
         return teamRepository.save(slackTeam);
     }

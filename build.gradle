@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '2.1.13.RELEASE'
+		springBootVersion = '2.1.3.RELEASE'
 	}
 	repositories {
 		mavenCentral()
@@ -27,6 +27,7 @@ repositories {
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 	compile('org.springframework.boot:spring-boot-starter-validation')
+	compile('org.springframework.boot:spring-boot-starter-quartz')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	compile("me.ramswaroop.jbot:jbot:3.0.2")
 	compile group: 'org.projectlombok', name: 'lombok', version: '1.16.18'

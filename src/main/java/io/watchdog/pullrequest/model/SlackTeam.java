@@ -1,6 +1,7 @@
 package io.watchdog.pullrequest.model;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +18,7 @@ import java.util.List;
 
 @Data
 @Document
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @CompoundIndex(name = "channel_name_uniqe", unique = true, def = "{'name' : 1, 'channel' : 1}")
 public class SlackTeam {
