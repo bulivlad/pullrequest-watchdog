@@ -48,6 +48,8 @@ public class PullRequestDTO {
 
     ReviewerDTO author;
 
+    String link;
+
     @JsonProperty("source")
     public void setNestedSource(Map<String, Object> source) {
         this.repository = ((Map<String, String>) source.get("repository")).get("full_name");

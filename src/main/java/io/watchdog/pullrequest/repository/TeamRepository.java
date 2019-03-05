@@ -13,7 +13,7 @@ import java.util.List;
 @Component
 public interface TeamRepository extends MongoRepository<SlackTeam, String> {
 
-    SlackTeam findSlackTeamByChannelAndAndName(String channel, String name);
+    SlackTeam findSlackTeamByChannelAndName(String channel, String name);
     List<SlackTeam> findSlackTeamsByChannel(String channel);
     List<SlackTeam> findAllByCheckingScheduleIsNotNull();
 

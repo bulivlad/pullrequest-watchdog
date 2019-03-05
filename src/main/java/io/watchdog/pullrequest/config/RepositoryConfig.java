@@ -20,5 +20,6 @@ public class RepositoryConfig {
     String slug;
     String endpoint;
     Integer timeout;
+    String pullRequestsUrl;
 
 }

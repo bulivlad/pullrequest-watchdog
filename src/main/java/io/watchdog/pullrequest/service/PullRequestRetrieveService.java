@@ -39,7 +39,7 @@ public class PullRequestRetrieveService {
         this.repositoryConfig = repositoryConfig;
     }
 
-    public Map<String, List<ReviewerDTO>> getUnapprovedPRs(List<String> reviewers) {
+    public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviwers(List<String> reviewers) {
         Map<String, List<ReviewerDTO>> unapprovedPRs = new HashMap<>();
         Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamUnapprovedPullRequests(reviewers);
         teamUnapprovedPullRequests.forEach(e -> {
@@ -51,11 +51,15 @@ public class PullRequestRetrieveService {
         return unapprovedPRs;
     }
 
+    public List<PullRequestDTO> getUnapprovedPRs(List<String> reviewers) {
+        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamUnapprovedPullRequests(reviewers);
+        return teamUnapprovedPullRequests.collect(Collectors.toList());
+    }
+
     private Stream<PullRequestDTO> getTeamUnapprovedPullRequests(List<String> member) {
         Stream<PullRequestDTO> pullRequestDTOStream = getAllTeamPullRequests(member);
         return pullRequestDTOStream.map(PullRequestDTO::getId)
                 .map(this::fetchMemberDetailedPullRequest)
-                .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(pullRequestDTO -> State.OPEN.equals(pullRequestDTO.getState()));
     }
@@ -88,12 +92,14 @@ public class PullRequestRetrieveService {
     private Optional<PullRequestDTO> fetchMemberDetailedPullRequest(Long pullRequestId) {
         log.info("Getting PR with id {}", pullRequestId);
         try {
-            return Optional.ofNullable(restTemplate.getForObject(
+            PullRequestDTO pullRequest = restTemplate.getForObject(
                     repositoryConfig.getEndpoint() + "/{pullRequestId}",
                     PullRequestDTO.class,
                     repositoryConfig.getUsername(),
                     repositoryConfig.getSlug(),
-                    pullRequestId));
+                    pullRequestId);
+            pullRequest.setLink(String.format(repositoryConfig.getPullRequestsUrl(), pullRequestId));
+            return Optional.of(pullRequest);
         } catch (RestClientException ex) {
             log.error("Exception getting PR with id " + pullRequestId, ex);
             return Optional.empty();

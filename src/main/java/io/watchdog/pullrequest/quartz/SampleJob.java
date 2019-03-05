@@ -1,9 +1,8 @@
 package io.watchdog.pullrequest.quartz;
 
-import io.watchdog.pullrequest.dto.ReviewerDTO;
 import io.watchdog.pullrequest.model.SlackUser;
 import io.watchdog.pullrequest.model.User;
-import io.watchdog.pullrequest.service.PullRequestRetrieveService;
+import io.watchdog.pullrequest.service.slack.SlackTeamService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -27,11 +26,11 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SampleJob implements Job {
 
-    PullRequestRetrieveService pullRequestRetrieveService;
+    SlackTeamService slackService;
 
     @Autowired
-    public SampleJob(PullRequestRetrieveService pullRequestRetrieveService) {
-        this.pullRequestRetrieveService = pullRequestRetrieveService;
+    public SampleJob(SlackTeamService slackService) {
+        this.slackService = slackService;
     }
 
     public void execute(JobExecutionContext context) {
@@ -40,8 +39,8 @@ public class SampleJob implements Job {
         List<SlackUser> teamSlackUsers = (List) mergedJobDataMap.getOrDefault("members", Collections.emptyList());
         List<String> reviewers = teamSlackUsers.stream().map(User::getUsername).collect(Collectors.toList());
 
-        Map<String, List<ReviewerDTO>> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers);
-        log.debug(unapprovedPRs.toString());
+        Map<String, List<String>> unapprovedPRsWithUsers = slackService.getPullRequestsWithSlackUsers(reviewers);
         log.info("cronjob for pull requests executed");
     }
+
 }

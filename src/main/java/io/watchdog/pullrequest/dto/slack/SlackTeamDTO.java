@@ -16,5 +16,6 @@ public class SlackTeamDTO {
     String[] members;
     String scheduler;
     String channel;
+    Boolean tagMembers = true;
 
 }

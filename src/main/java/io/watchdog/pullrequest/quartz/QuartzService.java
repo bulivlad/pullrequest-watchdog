@@ -35,7 +35,7 @@ public class QuartzService {
     public void rescheduleAllJobs(){
         log.info("Start rescheduling the cronjobs for all teams");
         List<SlackTeam> allTeamsWithScheduleExpression = teamService.getAllTeamsWithScheduleExpression();
-        allTeamsWithScheduleExpression.forEach(e -> scheduleJobAndLog(e));
+        allTeamsWithScheduleExpression.forEach(this::scheduleJobAndLog);
     }
 
     private void scheduleJobAndLog(SlackTeam e) {

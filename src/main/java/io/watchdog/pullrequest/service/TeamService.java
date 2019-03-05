@@ -52,7 +52,7 @@ public class TeamService {
     }
 
     public SlackTeam getSpecificTeam(String channel, String teamName) {
-        return teamRepository.findSlackTeamByChannelAndAndName(channel, teamName);
+        return teamRepository.findSlackTeamByChannelAndName(channel, teamName);
     }
 
 }

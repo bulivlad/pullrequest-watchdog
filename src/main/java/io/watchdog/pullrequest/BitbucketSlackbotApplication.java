@@ -13,6 +13,8 @@ import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventL
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+
 @Slf4j
 @SpringBootApplication(scanBasePackages = {"me.ramswaroop.jbot", "io.watchdog.pullrequest"})
 public class BitbucketSlackbotApplication {
@@ -39,9 +41,9 @@ public class BitbucketSlackbotApplication {
 	@Bean
 	public RestTemplate restTemplate() {
 		return new RestTemplateBuilder()
-				.basicAuthorization(authConfig.getBitbucket().getAuthUsername(), String.valueOf(authConfig.getBitbucket().getPassword()))
-				.setConnectTimeout(repositoryConfig.getTimeout())
-				.setReadTimeout(repositoryConfig.getTimeout())
+				.basicAuthentication(authConfig.getBitbucket().getAuthUsername(), String.valueOf(authConfig.getBitbucket().getPassword()))
+				.setConnectTimeout(Duration.ofMillis(repositoryConfig.getTimeout()))
+				.setReadTimeout(Duration.ofMillis(repositoryConfig.getTimeout()))
 				.build();
 	}
 
