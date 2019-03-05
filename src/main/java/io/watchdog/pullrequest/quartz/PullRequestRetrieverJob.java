@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,12 +23,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class SampleJob implements Job {
+public class PullRequestRetrieverJob implements Job {
 
     SlackTeamService slackService;
 
     @Autowired
-    public SampleJob(SlackTeamService slackService) {
+    public PullRequestRetrieverJob(SlackTeamService slackService) {
         this.slackService = slackService;
     }
 
@@ -39,7 +38,8 @@ public class SampleJob implements Job {
         List<SlackUser> teamSlackUsers = (List) mergedJobDataMap.getOrDefault("members", Collections.emptyList());
         List<String> reviewers = teamSlackUsers.stream().map(User::getUsername).collect(Collectors.toList());
 
-        Map<String, List<String>> unapprovedPRsWithUsers = slackService.getPullRequestsWithSlackUsers(reviewers);
+        List<String> messagesList = slackService.getPullRequestsWithSlackUsers(reviewers);
+        log.info(messagesList.toString());
         log.info("cronjob for pull requests executed");
     }
 

@@ -1,7 +1,7 @@
 package io.watchdog.pullrequest.service.slack;
 
 import com.mongodb.MongoWriteException;
-import io.watchdog.pullrequest.dto.ReviewerDTO;
+import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
 import io.watchdog.pullrequest.model.SlackTeam;
 import io.watchdog.pullrequest.model.SlackUser;
@@ -18,8 +18,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,12 +53,22 @@ public class SlackTeamService {
         return true;
     }
 
+    public List<String> getPullRequestsWithSlackUsers(List<String> reviewers) {
+        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers);
+        log.debug(unapprovedPRs.toString());
+
+        List<String> messages = buildSlackMessagesString(unapprovedPRs.stream());
+        log.debug(messages.toString());
+
+        return messages;
+    }
+
     public SlackTeam buildSlackTeam(Event event){
         SlackTeamDTO slackTeamDTO = buildSlackTeamDTO(event);
         List<SlackUser> users = Stream.of(slackTeamDTO.getMembers())
-                .map(e -> e.substring(e.indexOf("@") + 1))
+                .map(member -> member.substring(member.indexOf("@") + 1))
                 .map(String::trim)
-                .map(e -> SlackUser.builder().name(e).username(e).build())
+                .map(member -> SlackUser.builder().name(member).username(member).build())
                 .collect(Collectors.toList());
         return SlackTeam.builder()
                 .channel(slackTeamDTO.getChannel())
@@ -88,31 +96,16 @@ public class SlackTeamService {
         return slackTeamDTO;
     }
 
-    public Map<String, List<String>> getPullRequestsWithSlackUsers(List<String> reviewers) {
-        Map<String, List<ReviewerDTO>> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRsWithReviwers(reviewers);
-        log.debug(unapprovedPRs.toString());
-
-        Function<Map.Entry<String, List<ReviewerDTO>>, List<String>> mapReviewUserToSlackUser = x -> x.getValue().stream()
-                .map(ReviewerDTO::getUsername)
-                .collect(Collectors.toList());
-
-        Map<String, List<String>> unapprovedPRsWithUsers = unapprovedPRs.entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, mapReviewUserToSlackUser));
-        log.debug(unapprovedPRsWithUsers.toString());
-        List<String> messages = buildSlackMessagesString(unapprovedPRsWithUsers);
-        log.debug(messages.toString());
-
-        return unapprovedPRsWithUsers;
-    }
-
-    private List<String> buildSlackMessagesString(Map<String, List<String>> unapprovedPRsWithUsers){
+    private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs){
         List<String> messages = new ArrayList<>();
         messages.add(START_SLACK_MESSAGE_TEMPLATE);
-        unapprovedPRsWithUsers.forEach((key ,value) -> {
+
+        unapprovedPRs.forEach(pullRequestDTO -> {
             StringBuilder stringBuilder = new StringBuilder();
-            value.forEach(e -> stringBuilder.append("<@").append(e).append("> "));
-            messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, key, "{link}", stringBuilder));
+            pullRequestDTO.getReviewers().forEach((value) -> {
+                stringBuilder.append("<@").append(value.getUsername()).append("> ");
+                messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
+            });
         });
         return messages;
     }

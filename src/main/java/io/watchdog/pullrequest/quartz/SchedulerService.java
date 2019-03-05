@@ -50,7 +50,7 @@ public class SchedulerService {
         jobDataMap.put("channel", slackTeam.getChannel());
         jobDataMap.put("members", slackTeam.getMembers());
 
-        return JobBuilder.newJob(SampleJob.class)
+        return JobBuilder.newJob(PullRequestRetrieverJob.class)
                 .withIdentity(slackTeam.getName() + "-" + slackTeam.getChannel() + "-" + UUID.randomUUID().toString())
                 .withDescription("Retrieve Pull Requests job")
                 .usingJobData(jobDataMap)

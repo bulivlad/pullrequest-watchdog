@@ -41,22 +41,25 @@ public class PullRequestRetrieveService {
 
     public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviwers(List<String> reviewers) {
         Map<String, List<ReviewerDTO>> unapprovedPRs = new HashMap<>();
-        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamUnapprovedPullRequests(reviewers);
-        teamUnapprovedPullRequests.forEach(e -> {
-            List<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, e);
+        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
+        teamUnapprovedPullRequests.forEach(pullRequestDTO -> {
+            List<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
             if (!usersToApprove.isEmpty()) {
-                unapprovedPRs.put(e.getSourceBranch(), usersToApprove);
+                unapprovedPRs.put(pullRequestDTO.getSourceBranch(), usersToApprove);
             }
         });
         return unapprovedPRs;
     }
 
     public List<PullRequestDTO> getUnapprovedPRs(List<String> reviewers) {
-        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamUnapprovedPullRequests(reviewers);
-        return teamUnapprovedPullRequests.collect(Collectors.toList());
+        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
+        return teamUnapprovedPullRequests.peek(pullRequestDTO -> {
+            List<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
+            pullRequestDTO.setReviewers(usersToApprove);
+        }).collect(Collectors.toList());
     }
 
-    private Stream<PullRequestDTO> getTeamUnapprovedPullRequests(List<String> member) {
+    private Stream<PullRequestDTO> getTeamOpenedPullRequests(List<String> member) {
         Stream<PullRequestDTO> pullRequestDTOStream = getAllTeamPullRequests(member);
         return pullRequestDTOStream.map(PullRequestDTO::getId)
                 .map(this::fetchMemberDetailedPullRequest)
