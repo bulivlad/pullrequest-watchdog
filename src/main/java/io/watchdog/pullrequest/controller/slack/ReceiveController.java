@@ -35,11 +35,6 @@ public class ReceiveController {
         this.schedulerService = schedulerService;
     }
 
-    @Controller(events = EventType.DIRECT_MESSAGE)
-    public void onReceiveDirectMessage(WebSocketSession session, Event event){
-        slackBot.reply(session,event, new Message("Direct message received!"));
-    }
-
     @Controller(events = EventType.DIRECT_MENTION)
     public void onReceiveMention(WebSocketSession session, Event event) {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
@@ -50,11 +45,6 @@ public class ReceiveController {
         }
         boolean scheduled = schedulerService.scheduleEventForTeam(slackTeam);
         slackBot.reply(session,event,new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Scheduled " + scheduled + "!"));
-    }
-
-    @Controller(events = EventType.MESSAGE)
-    public void onReceiveMessage(WebSocketSession session, Event event) {
-        slackBot.reply(session, event, new Message("<@U70P0BZDY>"));
     }
 
 }

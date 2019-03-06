@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,8 @@ import java.util.stream.Stream;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SlackTeamService {
     private final static String START_SLACK_MESSAGE_TEMPLATE = "PRs waiting for reviewers today:\n";
-    // \t\t{name} - {link} - {users}
-    private final static String BODY_SLACK_MESSAGE_TEMPLATE = "\t\t %s - %s - %s";
+    // {name} - {link} - {users}
+    private final static String BODY_SLACK_MESSAGE_TEMPLATE = "%s - %s - %s";
 
     TeamService teamService;
     PullRequestRetrieveService pullRequestRetrieveService;
@@ -100,13 +101,12 @@ public class SlackTeamService {
         List<String> messages = new ArrayList<>();
         messages.add(START_SLACK_MESSAGE_TEMPLATE);
 
-        unapprovedPRs.forEach(pullRequestDTO -> {
-            StringBuilder stringBuilder = new StringBuilder();
-            pullRequestDTO.getReviewers().forEach((value) -> {
-                stringBuilder.append("<@").append(value.getUsername()).append("> ");
-                messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
-            });
-        });
+        unapprovedPRs.filter(pullRequestDTO -> !CollectionUtils.isEmpty(pullRequestDTO.getReviewers()))
+                .forEach(pullRequestDTO -> {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    pullRequestDTO.getReviewers().forEach((value) -> stringBuilder.append("<@").append(value.getUsername()).append("> "));
+                    messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
+                });
         return messages;
     }
 

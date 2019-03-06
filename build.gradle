@@ -28,8 +28,9 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 	compile('org.springframework.boot:spring-boot-starter-validation')
 	compile('org.springframework.boot:spring-boot-starter-quartz')
-	testCompile('org.springframework.boot:spring-boot-starter-test')
+	compile('com.google.guava:guava:27.0.1-jre')
+	compile('org.projectlombok:lombok:1.16.18')
+	compile('commons-lang:commons-lang:2.6')
 	compile("me.ramswaroop.jbot:jbot:3.0.2")
-	compile group: 'org.projectlombok', name: 'lombok', version: '1.16.18'
-	compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
+	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

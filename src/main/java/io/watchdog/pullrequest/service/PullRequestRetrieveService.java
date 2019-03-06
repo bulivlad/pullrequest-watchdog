@@ -43,9 +43,9 @@ public class PullRequestRetrieveService {
         Map<String, List<ReviewerDTO>> unapprovedPRs = new HashMap<>();
         Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
         teamUnapprovedPullRequests.forEach(pullRequestDTO -> {
-            List<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
+            Set<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
             if (!usersToApprove.isEmpty()) {
-                unapprovedPRs.put(pullRequestDTO.getSourceBranch(), usersToApprove);
+                unapprovedPRs.put(pullRequestDTO.getSourceBranch(), new ArrayList<>(usersToApprove));
             }
         });
         return unapprovedPRs;
@@ -54,8 +54,8 @@ public class PullRequestRetrieveService {
     public List<PullRequestDTO> getUnapprovedPRs(List<String> reviewers) {
         Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
         return teamUnapprovedPullRequests.peek(pullRequestDTO -> {
-            List<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
-            pullRequestDTO.setReviewers(usersToApprove);
+            Set<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
+            pullRequestDTO.setReviewers(new ArrayList<>(usersToApprove));
         }).collect(Collectors.toList());
     }
 
@@ -69,7 +69,7 @@ public class PullRequestRetrieveService {
 
     private Stream<PullRequestDTO> getAllTeamPullRequests(List<String> reviewers){
         PaginatedPullRequestDTO paginatedPullRequestDTOs = fetchPaginatedTeamOpenPullRequests(reviewers);
-        List<PullRequestDTO> pullRequestDTOs = new ArrayList<>(paginatedPullRequestDTOs.getPullRequests());
+        Set<PullRequestDTO> pullRequestDTOs = new HashSet<>(paginatedPullRequestDTOs.getPullRequests());
         PullRequestDTOIterator pullRequestDTOIterator = new PullRequestDTOIterator(paginatedPullRequestDTOs, restTemplate);
         pullRequestDTOIterator.forEachRemaining(paginatedPullRequest -> pullRequestDTOs.addAll(paginatedPullRequest.getPullRequests()));
         return pullRequestDTOs.stream();
@@ -109,13 +109,13 @@ public class PullRequestRetrieveService {
         }
     }
 
-    private List<ReviewerDTO> getUsersToApprove(List<String> reviewers, PullRequestDTO pullRequestDTO) {
+    private Set<ReviewerDTO> getUsersToApprove(List<String> reviewers, PullRequestDTO pullRequestDTO) {
         return pullRequestDTO.getParticipants().stream()
                 .filter(participantDTO -> Role.REVIEWER.equals(participantDTO.getRole()))
                 .filter(participantDTO -> reviewers.contains(participantDTO.getReviewerDTO().getUsername()))
                 .filter(participantDTO -> !participantDTO.getApproved())
                 .map(ParticipantDTO::getReviewerDTO)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     private String buildReviewersQueryString(List<String> reviewers) {
