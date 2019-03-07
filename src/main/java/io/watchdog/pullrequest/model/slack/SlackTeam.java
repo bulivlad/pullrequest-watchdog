@@ -32,6 +32,7 @@ public class SlackTeam {
     String checkingSchedule;
     @NotNull
     String name;
+    @Builder.Default
     boolean tagMembers = true;
 
 }

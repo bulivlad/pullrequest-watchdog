@@ -26,6 +26,7 @@ public class SlackMessageRequestDTO {
     @Singular
     List<Block> blocks;
     String threadTs;
+    @Builder.Default
     Boolean markdown = true;
     @JsonProperty("icon_emoji")
     String iconEmoji;
