@@ -21,5 +21,6 @@ public class RepositoryConfig {
     String endpoint;
     Integer timeout;
     String pullRequestsUrl;
+    String usersUrl;
 
 }

@@ -3,8 +3,11 @@ package io.watchdog.pullrequest.service.slack;
 import com.mongodb.MongoWriteException;
 import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
-import io.watchdog.pullrequest.model.SlackTeam;
-import io.watchdog.pullrequest.model.SlackUser;
+import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
+import io.watchdog.pullrequest.model.CorrelatedUser;
+import io.watchdog.pullrequest.model.User;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.service.PullRequestRetrieveService;
 import io.watchdog.pullrequest.service.TeamService;
 import lombok.AccessLevel;
@@ -19,6 +22,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,11 +40,13 @@ public class SlackTeamService {
 
     TeamService teamService;
     PullRequestRetrieveService pullRequestRetrieveService;
+    SlackApiRestService slackApiRestService;
 
     @Autowired
-    public SlackTeamService(TeamService teamService, PullRequestRetrieveService pullRequestRetrieveService) {
+    public SlackTeamService(TeamService teamService, PullRequestRetrieveService pullRequestRetrieveService, SlackApiRestService slackApiRestService) {
         this.teamService = teamService;
         this.pullRequestRetrieveService = pullRequestRetrieveService;
+        this.slackApiRestService = slackApiRestService;
     }
 
     public boolean saveTeam(SlackTeam slackTeam) {
@@ -54,11 +60,16 @@ public class SlackTeamService {
         return true;
     }
 
-    public List<String> getPullRequestsWithSlackUsers(List<String> reviewers) {
-        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers);
+    public List<String> getSlackMessages(List<CorrelatedUser> reviewers) {
+        List<String> reviewersUsername = reviewers.stream()
+                .map(CorrelatedUser::getBitbucketUser)
+                .map(User::getUsername)
+                .collect(Collectors.toList());
+        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewersUsername);
+
         log.debug(unapprovedPRs.toString());
 
-        List<String> messages = buildSlackMessagesString(unapprovedPRs.stream());
+        List<String> messages = buildSlackMessagesString(unapprovedPRs.stream(), reviewers);
         log.debug(messages.toString());
 
         return messages;
@@ -66,10 +77,10 @@ public class SlackTeamService {
 
     public SlackTeam buildSlackTeam(Event event){
         SlackTeamDTO slackTeamDTO = buildSlackTeamDTO(event);
-        List<SlackUser> users = Stream.of(slackTeamDTO.getMembers())
-                .map(member -> member.substring(member.indexOf("@") + 1))
+        List<CorrelatedUser> users = Stream.of(slackTeamDTO.getMembers())
+                .map(member -> StringUtils.substringBetween(member, "<@", ">"))
                 .map(String::trim)
-                .map(member -> SlackUser.builder().name(member).username(member).build())
+                .map(this::buildCorrelatedUser)
                 .collect(Collectors.toList());
         return SlackTeam.builder()
                 .channel(slackTeamDTO.getChannel())
@@ -82,32 +93,56 @@ public class SlackTeamService {
     //add team rdc2-team with members [@vbulimac, @nbuhosu] and scheduler 0 20 11 1/1 * ? *
 
     private SlackTeamDTO buildSlackTeamDTO(Event event) {
-        SlackTeamDTO slackTeamDTO = new SlackTeamDTO();
-
         String text = event.getText();
         log.info("Got message {}", text);
 
+        SlackTeamDTO slackTeamDTO = new SlackTeamDTO();
         slackTeamDTO.setChannel(event.getChannelId());
         slackTeamDTO.setTeamName(StringUtils.substringBetween(text, "team ", " ").trim());
         slackTeamDTO.setMembers(StringUtils.substringBetween(text, "members [", "]").trim().split(","));
         slackTeamDTO.setScheduler(StringUtils.substringAfter(text, "scheduler "));
-        log.info("Got messages team name '{}' members '{}' scheduler '{}'", slackTeamDTO.getTeamName(),
-                slackTeamDTO.getMembers(), slackTeamDTO.getScheduler());
+        log.debug("Got messages team name '{}' members '{}' scheduler '{}'", slackTeamDTO.getTeamName(),
+                slackTeamDTO.getMembers(),
+                slackTeamDTO.getScheduler());
 
         return slackTeamDTO;
     }
 
-    private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs){
+    private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs, List<CorrelatedUser> bitbucketUserDTOs){
         List<String> messages = new ArrayList<>();
         messages.add(START_SLACK_MESSAGE_TEMPLATE);
 
         unapprovedPRs.filter(pullRequestDTO -> !CollectionUtils.isEmpty(pullRequestDTO.getReviewers()))
                 .forEach(pullRequestDTO -> {
                     StringBuilder stringBuilder = new StringBuilder();
-                    pullRequestDTO.getReviewers().forEach((value) -> stringBuilder.append("<@").append(value.getUsername()).append("> "));
+                    pullRequestDTO.getReviewers()
+                            .forEach((value) -> stringBuilder.append("<@").append(getSlackUserMention(bitbucketUserDTOs.stream(), value.getUsername())).append("> "));
                     messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
                 });
         return messages;
+    }
+
+    private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerUsername){
+        return bitbucketUserDTOs
+                .filter(user -> Objects.nonNull(user.getBitbucketUser()))
+                .filter(user -> Objects.nonNull(user.getBitbucketUser().getUsername()))
+                .filter(users -> users.getBitbucketUser().getUsername().equals(reviewerUsername))
+                .findFirst()
+                .orElse(new CorrelatedUser())
+                .getSlackUser()
+                .getMention();
+    }
+
+    private CorrelatedUser buildCorrelatedUser(String slackUserId){
+        SlackUserDTO slackUserDTO = slackApiRestService.retrieveSlackUserDetails(slackUserId);
+        SlackUser slackUser = SlackUser.builder()
+                .name(slackUserDTO.getUserRealName())
+                .mention(slackUserId)
+                .username(slackUserDTO.getUserDisplayName())
+                .email(slackUserDTO.getUserEmail())
+                .build();
+
+        return new CorrelatedUser(slackUser);
     }
 
 }

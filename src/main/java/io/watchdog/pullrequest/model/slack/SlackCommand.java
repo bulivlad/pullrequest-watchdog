@@ -13,7 +13,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum SlackCommand {
 
-    MESSAGE_CHANNEL("chat.postMessage");
+    MESSAGE_CHANNEL("chat.postMessage"),
+    USERS_INFO("users.info");
 
     @Getter
     String value;

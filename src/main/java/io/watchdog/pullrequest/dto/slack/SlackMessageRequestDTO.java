@@ -1,7 +1,8 @@
-package io.watchdog.pullrequest.model.slack;
+package io.watchdog.pullrequest.dto.slack;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.watchdog.pullrequest.model.slack.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SlackMessageRequest {
+public class SlackMessageRequestDTO {
 
     String channel;
     String text;

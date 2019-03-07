@@ -2,9 +2,10 @@ package io.watchdog.pullrequest.service.slack;
 
 import io.watchdog.pullrequest.config.AuthConfig;
 import io.watchdog.pullrequest.config.RepositoryConfig;
+import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
 import io.watchdog.pullrequest.model.slack.SlackCommand;
-import io.watchdog.pullrequest.model.slack.SlackMessageRequest;
-import io.watchdog.pullrequest.model.slack.SlackMessageResponse;
+import io.watchdog.pullrequest.dto.slack.SlackMessageRequestDTO;
+import io.watchdog.pullrequest.dto.slack.SlackMessageResponseDTO;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -20,41 +21,52 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class SlackRestService {
+public class SlackApiRestService {
 
     AuthConfig authConfig;
     RestTemplate restTemplate;
     RepositoryConfig repositoryConfig;
 
     @Autowired
-    public SlackRestService(AuthConfig authConfig, RepositoryConfig repositoryConfig) {
+    public SlackApiRestService(AuthConfig authConfig, RepositoryConfig repositoryConfig) {
         this.authConfig = authConfig;
         this.repositoryConfig = repositoryConfig;
         this.restTemplate = new RestTemplate();
     }
 
-    public void sendMessageToChannel(SlackMessageRequest message){
+    public void sendMessageToChannel(SlackMessageRequestDTO message) {
         sendSlackCommand(message, SlackCommand.MESSAGE_CHANNEL);
     }
 
-    private void sendSlackCommand(SlackMessageRequest message, SlackCommand slackCommand){
+    public SlackUserDTO retrieveSlackUserDetails(String slackUserId){
+        ResponseEntity<SlackUserDTO> slackResponse = restTemplate.exchange(
+                authConfig.getSlack().getEndpoint() + SlackCommand.USERS_INFO.getValue() + "?user={userId}",
+                HttpMethod.GET,
+                buildHttpEntityWithAuthorisation(null),
+                SlackUserDTO.class,
+                slackUserId);
+        handleResponse(slackResponse);
+        return slackResponse.getBody();
+    }
 
-        ResponseEntity<SlackMessageResponse> slackResponse = restTemplate.exchange(
+    private SlackMessageResponseDTO sendSlackCommand(SlackMessageRequestDTO message, SlackCommand slackCommand){
+        ResponseEntity<SlackMessageResponseDTO> slackResponse = restTemplate.exchange(
                 authConfig.getSlack().getEndpoint() + slackCommand.getValue(),
                 HttpMethod.POST,
                 buildHttpEntityWithAuthorisation(message),
-                SlackMessageResponse.class,
+                SlackMessageResponseDTO.class,
                 repositoryConfig.getUsername(),
                 repositoryConfig.getSlug());
         handleResponse(slackResponse);
+        return slackResponse.getBody();
     }
 
-    private void handleResponse(ResponseEntity<SlackMessageResponse> response) {
+    private void handleResponse(ResponseEntity response) {
         log.info("Slack response code is {}", response.getStatusCode().toString());
-        log.info("Slack response body is {}", response.getBody().toString());
+        log.debug("Slack response body is {}", response.getBody().toString());
     }
 
-    private HttpEntity buildHttpEntityWithAuthorisation(SlackMessageRequest message){
+    private HttpEntity buildHttpEntityWithAuthorisation(SlackMessageRequestDTO message){
         HttpHeaders multiValueMap = new HttpHeaders();
         multiValueMap.setContentType(MediaType.APPLICATION_JSON);
         multiValueMap.set(HttpHeaders.AUTHORIZATION, "Bearer " + authConfig.getSlack().getToken());

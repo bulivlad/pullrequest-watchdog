@@ -101,7 +101,11 @@ public class PullRequestRetrieveService {
                     repositoryConfig.getUsername(),
                     repositoryConfig.getSlug(),
                     pullRequestId);
-            pullRequest.setLink(String.format(repositoryConfig.getPullRequestsUrl(), pullRequestId));
+            pullRequest.setLink(String.format(
+                    repositoryConfig.getPullRequestsUrl(),
+                    repositoryConfig.getUsername(),
+                    repositoryConfig.getSlug(),
+                    pullRequestId));
             return Optional.of(pullRequest);
         } catch (RestClientException ex) {
             log.error("Exception getting PR with id " + pullRequestId, ex);

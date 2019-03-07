@@ -1,4 +1,4 @@
-package io.watchdog.pullrequest.model.slack;
+package io.watchdog.pullrequest.dto.slack;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SlackMessageResponse {
+public class SlackMessageResponseDTO {
 
     String ok;
     String channel;

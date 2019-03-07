@@ -1,7 +1,11 @@
 package io.watchdog.pullrequest.service;
 
-import io.watchdog.pullrequest.model.SlackTeam;
+import io.watchdog.pullrequest.dto.BitbucketUserDTO;
+import io.watchdog.pullrequest.model.BitbucketUser;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.repository.TeamRepository;
+import io.watchdog.pullrequest.service.slack.SlackApiRestService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +21,16 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TeamService {
 
+    BitBucketApiRestService bitBucketApiRestService;
+    SlackApiRestService slackApiRestService;
     TeamRepository teamRepository;
 
     @Autowired
-    public TeamService(TeamRepository teamRepository) {
+    public TeamService(BitBucketApiRestService bitBucketApiRestService,
+                       SlackApiRestService slackApiRestService,
+                       TeamRepository teamRepository) {
+        this.bitBucketApiRestService = bitBucketApiRestService;
+        this.slackApiRestService = slackApiRestService;
         this.teamRepository = teamRepository;
     }
 
@@ -37,6 +47,7 @@ public class TeamService {
     }
 
     public SlackTeam saveTeam(SlackTeam slackTeam) {
+        slackTeam.getMembers().forEach(e -> e.setBitbucketUser(buildBitbucketUsersForTeam(e.getSlackUser())));
         return teamRepository.save(slackTeam);
     }
 
@@ -53,6 +64,14 @@ public class TeamService {
 
     public SlackTeam getSpecificTeam(String channel, String teamName) {
         return teamRepository.findSlackTeamByChannelAndName(channel, teamName);
+    }
+
+    private BitbucketUser buildBitbucketUsersForTeam(SlackUser slackUser) {
+        return convertBitbucketDtoToBitbucketUser(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(slackUser.getEmail()));
+    }
+
+    private BitbucketUser convertBitbucketDtoToBitbucketUser(BitbucketUserDTO bitbucketUserDTO){
+        return BitbucketUser.builder().name(bitbucketUserDTO.getDisplayName()).username(bitbucketUserDTO.getUsername()).build();
     }
 
 }

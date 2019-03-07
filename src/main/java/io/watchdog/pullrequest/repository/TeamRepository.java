@@ -2,7 +2,7 @@ package io.watchdog.pullrequest.repository;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Component;
-import io.watchdog.pullrequest.model.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
-package io.watchdog.pullrequest.model;
+package io.watchdog.pullrequest.model.slack;
 
+import io.watchdog.pullrequest.model.User;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -12,10 +13,12 @@ import lombok.experimental.FieldDefaults;
 public class SlackUser extends User {
 
     String email;
+    String mention;
 
     @Builder
-    public SlackUser(String username, String name, String email) {
+    public SlackUser(String username, String name, String email, String mention) {
         super(username, name);
         this.email = email;
+        this.mention = mention;
     }
 }

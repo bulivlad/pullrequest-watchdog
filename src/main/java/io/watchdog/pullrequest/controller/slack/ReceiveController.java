@@ -1,7 +1,7 @@
 package io.watchdog.pullrequest.controller.slack;
 
 import io.watchdog.pullrequest.bot.SlackBot;
-import io.watchdog.pullrequest.model.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.quartz.SchedulerService;
 import io.watchdog.pullrequest.service.slack.SlackTeamService;
 import lombok.AccessLevel;

@@ -1,6 +1,6 @@
 package io.watchdog.pullrequest.quartz;
 
-import io.watchdog.pullrequest.model.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.service.TeamService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -38,9 +38,12 @@ public class QuartzService {
         allTeamsWithScheduleExpression.forEach(this::scheduleJobAndLog);
     }
 
-    private void scheduleJobAndLog(SlackTeam e) {
-        log.debug("Scheduling the job for team '{}' in channel '{}' with cron expression '{}'", e.getName(), e.getChannel(), e.getCheckingSchedule());
-        boolean scheduled = schedulerService.scheduleEventForTeam(e);
+    private void scheduleJobAndLog(SlackTeam slackTeam) {
+        log.debug("Scheduling the job for team '{}' in channel '{}' with cron expression '{}'",
+                slackTeam.getName(),
+                slackTeam.getChannel(),
+                slackTeam.getCheckingSchedule());
+        boolean scheduled = schedulerService.scheduleEventForTeam(slackTeam);
         log.debug("Scheduled {}", scheduled);
     }
 

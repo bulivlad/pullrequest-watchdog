@@ -2,7 +2,6 @@ package io.watchdog.pullrequest;
 
 import io.watchdog.pullrequest.config.AuthConfig;
 import io.watchdog.pullrequest.config.RepositoryConfig;
-import io.watchdog.pullrequest.service.slack.SlackTeamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -22,9 +21,6 @@ public class BitbucketSlackbotApplication {
 
 	private final AuthConfig authConfig;
 	private final RepositoryConfig repositoryConfig;
-
-	@Autowired
-	private SlackTeamService slackRestService;
 
 	@Autowired
 	public BitbucketSlackbotApplication(AuthConfig authConfig,

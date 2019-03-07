@@ -1,6 +1,6 @@
 package io.watchdog.pullrequest.quartz;
 
-import io.watchdog.pullrequest.model.SlackTeam;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;

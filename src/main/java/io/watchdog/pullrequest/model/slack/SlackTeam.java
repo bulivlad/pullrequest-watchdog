@@ -1,5 +1,6 @@
-package io.watchdog.pullrequest.model;
+package io.watchdog.pullrequest.model.slack;
 
+import io.watchdog.pullrequest.model.CorrelatedUser;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,7 @@ public class SlackTeam {
 
     @Id
     String id;
-    List<SlackUser> members;
+    List<CorrelatedUser> members;
     @NonNull
     String channel;
     String checkingSchedule;
