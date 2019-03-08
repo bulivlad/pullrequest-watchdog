@@ -5,6 +5,7 @@ import io.watchdog.pullrequest.service.TeamService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -38,12 +39,17 @@ public class QuartzService {
         allTeamsWithScheduleExpression.forEach(this::scheduleJobAndLog);
     }
 
-    private void scheduleJobAndLog(SlackTeam slackTeam) {
+    private void scheduleJobAndLog(SlackTeam slackTeam)  {
         log.debug("Scheduling the job for team '{}' in channel '{}' with cron expression '{}'",
                 slackTeam.getName(),
                 slackTeam.getChannel(),
                 slackTeam.getCheckingSchedule());
-        boolean scheduled = schedulerService.scheduleEventForTeam(slackTeam);
+        boolean scheduled = false;
+        try {
+            scheduled = schedulerService.scheduleEventForTeam(slackTeam);
+        } catch (SchedulerException ex){
+            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), ex);
+        }
         log.debug("Scheduled {}", scheduled);
     }
 

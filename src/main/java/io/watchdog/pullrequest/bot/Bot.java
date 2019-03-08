@@ -3,7 +3,6 @@ package io.watchdog.pullrequest.bot;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.watchdog.pullrequest.model.slack.MethodWrapper;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
-import io.watchdog.pullrequest.util.ClassesUtil;
 import lombok.extern.slf4j.Slf4j;
 import me.ramswaroop.jbot.core.slack.Controller;
 import me.ramswaroop.jbot.core.slack.EventType;
@@ -11,6 +10,8 @@ import me.ramswaroop.jbot.core.slack.SlackService;
 import me.ramswaroop.jbot.core.slack.models.Event;
 import me.ramswaroop.jbot.core.slack.models.Message;
 import org.apache.commons.lang.StringUtils;
+import org.reflections.Reflections;
+import org.reflections.scanners.MethodAnnotationsScanner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.CollectionUtils;
@@ -53,29 +54,24 @@ public abstract class Bot {
 
     @PostConstruct
     public void setup(){
-        try {
-            List<Class> classes = ClassesUtil.getClasses(getScanPackage());
-            getControllerMethodsStream(classes)
-                    .forEach(m -> {
-                        Controller controller = m.getAnnotation(Controller.class);
-                        String next = controller.next();
+        getControllerMethodsStream(getScanPackage())
+                .forEach(method -> {
+                    Controller controller = method.getAnnotation(Controller.class);
+                    String next = controller.next();
 
-                        if (!StringUtils.isEmpty(next)) {
-                            conversationMethodNames.add(next);
-                        }
+                    if (!StringUtils.isEmpty(next)) {
+                        conversationMethodNames.add(next);
+                    }
 
-                        String pattern = controller.pattern();
-                        MethodWrapper methodWrapper = MethodWrapper.builder().method(m).pattern(pattern).next(next).build();
+                    String pattern = controller.pattern();
+                    MethodWrapper methodWrapper = MethodWrapper.builder().method(method).pattern(pattern).next(next).build();
 
-                        if (!conversationMethodNames.contains(m.getName())) {
-                            EventType[] eventTypes = controller.events();
-                            Arrays.stream(eventTypes).forEach(e -> buildEventToMethodsMap(methodWrapper, e));
-                        }
-                        methodNameMap.put(m.getName(), methodWrapper);
-                    });
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
-        }
+                    if (!conversationMethodNames.contains(method.getName())) {
+                        EventType[] eventTypes = controller.events();
+                        Arrays.stream(eventTypes).forEach(e -> buildEventToMethodsMap(methodWrapper, e));
+                    }
+                    methodNameMap.put(method.getName(), methodWrapper);
+                });
     }
 
     private void buildEventToMethodsMap(MethodWrapper methodWrapper, EventType eventType) {
@@ -85,10 +81,9 @@ public abstract class Bot {
         eventToMethodsMap.put(eventType.name(), methodWrappers);
     }
 
-    private Stream<Method> getControllerMethodsStream(List<Class> classes) {
-        return classes.stream()
-                      .flatMap(e -> Arrays.stream(e.getMethods())
-                                          .filter(m -> m.isAnnotationPresent(Controller.class)));
+    private Stream<Method> getControllerMethodsStream(String scanPackage) {
+        Reflections reflections = new Reflections(scanPackage, new MethodAnnotationsScanner());
+        return reflections.getMethodsAnnotatedWith(Controller.class).stream();
     }
 
     /**

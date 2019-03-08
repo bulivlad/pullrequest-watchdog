@@ -16,5 +16,6 @@ public class RestResponse {
 
     String changedEntity;
     String entityName;
+    boolean scheduled;
 
 }

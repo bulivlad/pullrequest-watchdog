@@ -27,19 +27,14 @@ public class SchedulerService {
         this.scheduler = scheduler;
     }
 
-    public boolean scheduleEventForTeam(SlackTeam slackTeam) {
+    public boolean scheduleEventForTeam(SlackTeam slackTeam) throws SchedulerException {
         if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
             return false;
         }
 
         JobDetail jobDetail = buildJobDetail(slackTeam);
         Trigger trigger = buildJobTrigger(jobDetail, slackTeam);
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), e);
-            return false;
-        }
+        scheduler.scheduleJob(jobDetail, trigger);
 
         return true;
     }

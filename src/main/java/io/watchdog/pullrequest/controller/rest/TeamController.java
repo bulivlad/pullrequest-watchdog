@@ -1,6 +1,8 @@
 package io.watchdog.pullrequest.controller.rest;
 
 import io.watchdog.pullrequest.model.RestResponse;
+import io.watchdog.pullrequest.model.slack.SlackTeam;
+import io.watchdog.pullrequest.service.TeamService;
 import io.watchdog.pullrequest.service.slack.SlackTeamService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -8,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import io.watchdog.pullrequest.model.slack.SlackTeam;
-import io.watchdog.pullrequest.service.TeamService;
 
 import java.util.List;
 
@@ -50,8 +50,8 @@ public class TeamController {
 
     @PostMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addTeam(@RequestBody SlackTeam slackTeam) {
-        slackTeamService.saveTeam(slackTeam);
-        RestResponse response = RestResponse.builder().changedEntity(slackTeam.getClass().getSimpleName()).entityName(slackTeam.getName()).build();
+        boolean saved = slackTeamService.saveTeam(slackTeam);
+        RestResponse response = RestResponse.builder().changedEntity(slackTeam.getClass().getSimpleName()).entityName(slackTeam.getName()).scheduled(saved).build();
         return ResponseEntity.ok(response);
     }
 

@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import me.ramswaroop.jbot.core.slack.models.Event;
 import org.apache.commons.lang.StringUtils;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
@@ -54,6 +55,9 @@ public class SlackTeamService {
             teamService.saveTeam(slackTeam);
         } catch (MongoWriteException | DuplicateKeyException ex){
             log.warn("Team '{}' in channel {} is already existing in the database!", slackTeam.getName(), slackTeam.getChannel());
+            return false;
+        } catch (SchedulerException ex) {
+            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), ex);
             return false;
         }
 
