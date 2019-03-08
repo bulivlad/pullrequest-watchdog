@@ -64,6 +64,17 @@ public class SlackTeamService {
         return true;
     }
 
+    public boolean updateTeam(SlackTeam slackTeam) {
+        try {
+            teamService.updateTeam(slackTeam);
+        } catch (SchedulerException ex) {
+            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), ex);
+            return false;
+        }
+
+        return true;
+    }
+
     public List<String> getSlackMessages(List<CorrelatedUser> reviewers) {
         List<String> reviewersUsername = reviewers.stream()
                 .map(CorrelatedUser::getBitbucketUser)

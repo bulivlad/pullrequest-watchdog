@@ -2,6 +2,7 @@ package io.watchdog.pullrequest.service;
 
 import io.watchdog.pullrequest.dto.BitbucketUserDTO;
 import io.watchdog.pullrequest.model.BitbucketUser;
+import io.watchdog.pullrequest.model.CorrelatedUser;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.quartz.SchedulerService;
@@ -11,8 +12,10 @@ import lombok.experimental.FieldDefaults;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author vladclaudiubulimac on 2019-03-03.
@@ -48,15 +51,28 @@ public class TeamService {
     }
 
     public SlackTeam saveTeam(SlackTeam slackTeam) throws SchedulerException {
-        slackTeam.getMembers().forEach(e -> e.setBitbucketUser(buildBitbucketUsersForTeam(e.getSlackUser())));
+        slackTeam.getMembers().forEach(member -> member.setBitbucketUser(buildBitbucketUsersForTeam(member.getSlackUser())));
         schedulerService.scheduleEventForTeam(slackTeam);
         return teamRepository.save(slackTeam);
     }
 
-    public SlackTeam updateTeam(SlackTeam slackTeam) {
+    public SlackTeam updateTeam(SlackTeam slackTeam) throws SchedulerException {
         SlackTeam existingTeam = getSpecificTeam(slackTeam.getChannel(), slackTeam.getName());
+        schedulerService.rescheduleEventForTeam(slackTeam);
+
+        if(CollectionUtils.isEmpty(slackTeam.getMembers())){
+            slackTeam.getMembers().stream()
+                    .filter(this::isBitbucketUserMissing)
+                    .forEach(member -> member.setBitbucketUser(buildBitbucketUsersForTeam(member.getSlackUser())));
+        }
+
         slackTeam.setId(existingTeam.getId());
         return teamRepository.save(slackTeam);
+    }
+
+    private boolean isBitbucketUserMissing(CorrelatedUser member) {
+        return Objects.isNull(member.getBitbucketUser()) ||
+                Objects.equals(member.getBitbucketUser(), new BitbucketUser());
     }
 
     public void deleteTeam(String channel, String teamName) {

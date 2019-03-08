@@ -2,7 +2,6 @@ package io.watchdog.pullrequest.controller.slack;
 
 import io.watchdog.pullrequest.bot.SlackBot;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
-import io.watchdog.pullrequest.quartz.SchedulerService;
 import io.watchdog.pullrequest.service.slack.SlackTeamService;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -26,13 +25,11 @@ public class ReceiveController {
 
     SlackBot slackBot;
     SlackTeamService slackTeamService;
-    SchedulerService schedulerService;
 
     @Autowired
-    public ReceiveController(SlackBot slackBot, SlackTeamService slackTeamService, SchedulerService schedulerService) {
+    public ReceiveController(SlackBot slackBot, SlackTeamService slackTeamService) {
         this.slackBot = slackBot;
         this.slackTeamService = slackTeamService;
-        this.schedulerService = schedulerService;
     }
 
     @Controller(events = EventType.DIRECT_MENTION)

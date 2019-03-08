@@ -14,7 +14,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RestResponse {
 
-    String changedEntity;
+    String affectedEntity;
     String entityName;
     boolean scheduled;
 

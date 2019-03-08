@@ -51,14 +51,22 @@ public class TeamController {
     @PostMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addTeam(@RequestBody SlackTeam slackTeam) {
         boolean saved = slackTeamService.saveTeam(slackTeam);
-        RestResponse response = RestResponse.builder().changedEntity(slackTeam.getClass().getSimpleName()).entityName(slackTeam.getName()).scheduled(saved).build();
+        RestResponse response = RestResponse.builder()
+                .affectedEntity(slackTeam.getClass().getSimpleName())
+                .entityName(slackTeam.getName())
+                .scheduled(saved)
+                .build();
         return ResponseEntity.ok(response);
     }
 
     @PutMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity updateTeam(@RequestBody SlackTeam slackTeam) {
-        SlackTeam savedEntity = teamService.updateTeam(slackTeam);
-        RestResponse response = RestResponse.builder().changedEntity(savedEntity.getClass().getSimpleName()).entityName(slackTeam.getName()).build();
+        boolean updated = slackTeamService.updateTeam(slackTeam);
+        RestResponse response = RestResponse.builder()
+                .affectedEntity(slackTeam.getClass().getSimpleName())
+                .entityName(slackTeam.getName())
+                .scheduled(updated)
+                .build();
         return ResponseEntity.ok(response);
     }
 
