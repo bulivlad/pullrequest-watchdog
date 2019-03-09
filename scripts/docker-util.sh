@@ -6,6 +6,7 @@
 # The script is adapted for MacOS users and it will try to retrieve the docker
 # hub password from KeyChain at DOCKER_HUB_PASSWORD key
 # In order to publish the image ./gradlew clean build and docker build are called
+# THE SCRIPT SHOULD ONLY BE USED AFTER A NEW GIT TAG WAS PUSHED
 # Usage: ./docker-util.sh
 
 set -e
