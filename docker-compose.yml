@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+
+  watchdog:
+    container_name: pullrequests-watchdog
+    image: dotinc/pullrequest-watchdog
+    ports:
+      - "9010:9010"
+    depends_on:
+      - mongo
+    environment:
+      #Slack token
+      - AUTH_SLACK_TOKEN
+
+      #Git repository details
+      - AUTH_BITBUCKET_AUTH-USERNAME
+      - AUTH_BITBUCKET_PASSWORD
+      - REPOSITORY_USERNAME
+      - REPOSITORY_SLUG
+
+      #MongoDB details
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_MONGODB_port=27017
+
+  mongo:
+    image: mongo:3.6
+    container_name: mongodb
+    volumes:
+    - "mongo_data:/data/db"
+
+volumes:
+  mongo_data:

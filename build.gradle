@@ -16,7 +16,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'io.watchdog.pullrequest'
-version = '0.0.1'
+version = '0.0.2-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
@@ -24,7 +24,11 @@ repositories {
 }
 
 jar {
-	archivesBaseName = "pullrequests-watchdog"
+    manifest {
+        attributes 'Watchdog-Version': version
+    }
+    archivesBaseName = "pullrequests-watchdog"
+    project.version = null
 }
 
 dependencies {
