@@ -20,7 +20,7 @@ import org.springframework.web.socket.WebSocketSession;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DirectMessageController {
 
-    private static final String HEALTH_CHECK_MESSAGE = "healthcheck";
+    private static final String HEALTH_CHECK_MESSAGE_REGEX = "([A-Za-z\\s].*)(healthcheck)([A-Za-z\\s].*)";
 
     SlackBot slackBot;
 
@@ -28,11 +28,8 @@ public class DirectMessageController {
         this.slackBot = slackBot;
     }
 
-    @Controller(events = EventType.DIRECT_MESSAGE)
-    public void onReceiveDirectMessage(WebSocketSession session, Event event) {
-        String message = event.getText();
-        if (HEALTH_CHECK_MESSAGE.equalsIgnoreCase(message)) {
-            slackBot.reply(session,event,new Message(":white_check_mark: I'm healthy. Thanks!"));
-        }
+    @Controller(events = EventType.DIRECT_MESSAGE, pattern = HEALTH_CHECK_MESSAGE_REGEX)
+    public void onReceiveHealthCheckDirectMessage(WebSocketSession session, Event event) {
+        slackBot.reply(session,event,new Message(":white_check_mark: I'm healthy. Thanks!"));
     }
 }

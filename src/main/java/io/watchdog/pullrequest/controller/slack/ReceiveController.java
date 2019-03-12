@@ -23,6 +23,8 @@ import org.springframework.web.socket.WebSocketSession;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ReceiveController {
 
+    private static final String ADD_TEAM_EVENT_REGEX = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler\\s).*";
+
     SlackBot slackBot;
     SlackTeamService slackTeamService;
 
@@ -32,8 +34,8 @@ public class ReceiveController {
         this.slackTeamService = slackTeamService;
     }
 
-    @Controller(events = EventType.DIRECT_MENTION, pattern = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler ).*")
-    public void onReceiveMention(WebSocketSession session, Event event) {
+    @Controller(events = EventType.DIRECT_MENTION, pattern = ADD_TEAM_EVENT_REGEX)
+    public void onReceiveAddTeamMention(WebSocketSession session, Event event) {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
         boolean saved = slackTeamService.saveTeam(slackTeam);
         if(!saved) {
