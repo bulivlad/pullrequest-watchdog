@@ -41,8 +41,6 @@ public abstract class Bot {
     private final Map<String, List<MethodWrapper>> eventToMethodsMap = new HashMap<>();
     private final Map<String, Queue<MethodWrapper>> conversationQueueMap = new HashMap<>();
 
-    protected abstract String getScanPackage();
-
     @Autowired
     private ApplicationContext сontext;
 
@@ -51,6 +49,21 @@ public abstract class Bot {
      */
     @Autowired
     protected SlackService slackService;
+
+    /**
+     * Entry point where the web socket connection starts
+     * and after which your bot becomes live.
+     */
+    @PostConstruct
+    private void startWebSocketConnection() {
+        slackService.startRTM(getSlackToken());
+        if (slackService.getWebSocketUrl() != null) {
+            WebSocketConnectionManager manager = new WebSocketConnectionManager(client(), handler(), slackService.getWebSocketUrl());
+            manager.start();
+        } else {
+            log.error("No websocket url returned by Slack.");
+        }
+    }
 
     @PostConstruct
     public void setup(){
@@ -68,23 +81,43 @@ public abstract class Bot {
 
                     if (!conversationMethodNames.contains(method.getName())) {
                         EventType[] eventTypes = controller.events();
-                        Arrays.stream(eventTypes).forEach(e -> buildEventToMethodsMap(methodWrapper, e));
+                        Arrays.stream(eventTypes).forEach(eventType -> buildEventToMethodsMap(methodWrapper, eventType));
                     }
                     methodNameMap.put(method.getName(), methodWrapper);
                 });
     }
 
+    /**
+     * Method used to get a stream containing all methods annotated with {@link Controller}
+     * in package provided in <code>scanPackage</code> parameter
+     *
+     * @param scanPackage the package to scan
+     * @return {@link Stream} containing methods annotated with {@link Controller}
+     */
+    private Stream<Method> getControllerMethodsStream(String scanPackage) {
+        Reflections reflections = new Reflections(scanPackage, new MethodAnnotationsScanner());
+        return reflections.getMethodsAnnotatedWith(Controller.class).stream();
+    }
+
+    /**
+     * Build the mapping between slack {@link EventType} and the {@link MethodWrapper} that will handle the slack event
+     *
+     * @param methodWrapper the method wrapper to handle the event
+     * @param eventType the event to be handled
+     */
     private void buildEventToMethodsMap(MethodWrapper methodWrapper, EventType eventType) {
-        List<MethodWrapper> methodWrappers = eventToMethodsMap.getOrDefault(eventType.name(), new ArrayList<>());
+        List<MethodWrapper> methodWrappers = eventToMethodsMap.getOrDefault(eventType.name(), Collections.emptyList());
 
         methodWrappers.add(methodWrapper);
         eventToMethodsMap.put(eventType.name(), methodWrappers);
     }
 
-    private Stream<Method> getControllerMethodsStream(String scanPackage) {
-        Reflections reflections = new Reflections(scanPackage, new MethodAnnotationsScanner());
-        return reflections.getMethodsAnnotatedWith(Controller.class).stream();
-    }
+    /**
+     * Get the package where the Slack controllers resides
+     *
+     * @return java package where slack controllers resides
+     */
+    protected abstract String getScanPackage();
 
     /**
      * Class extending this must implement this as it's
@@ -155,6 +188,12 @@ public abstract class Bot {
         }
     }
 
+    /**
+     * Get the type of the event
+     *
+     * @param event Slack event
+     * @return the {@link Event#getType()} as {@link EventType#toString()}
+     */
     private String getEventType(Event event) {
         if (event.getType() == null) {
             return EventType.ACK.name();
@@ -239,22 +278,6 @@ public abstract class Bot {
     }
 
     /**
-     * Encode the text before sending to Slack.
-     * Learn <a href="https://api.slack.com/docs/formatting">more on message formatting in Slack</a>
-     *
-     * @param message
-     * @return encoded text.
-     */
-    private String encode(String message) {
-        if (null != message){
-            return message.replace("&", "&amp;")
-                          .replace("<", "&lt;")
-                          .replace(">", "&gt;");
-        }
-        return null;
-    }
-
-    /**
      * Form a Queue with all the methods responsible for a particular conversation.
      *
      * @param queue
@@ -280,8 +303,7 @@ public abstract class Bot {
      */
     private void invokeMethods(WebSocketSession session, Event event) {
         try {
-            List<MethodWrapper> methodWrappers = eventToMethodsMap.get(event.getType().toUpperCase());
-            if (methodWrappers == null) return;
+            List<MethodWrapper> methodWrappers = new ArrayList<>(eventToMethodsMap.getOrDefault(event.getType().toUpperCase(), Collections.emptyList()));
 
             getMethodWithMatchingPatternAndFilterUnmatchedMethods(event, methodWrappers).ifPresent(methodWrappers::add);
 
@@ -335,50 +357,43 @@ public abstract class Bot {
      * such method is found.
      */
     private Optional<MethodWrapper> getMethodWithMatchingPatternAndFilterUnmatchedMethods(Event event, List<MethodWrapper> methodWrappers) {
-        if (methodWrappers != null) {
-            Iterator<MethodWrapper> methodWrapperIterator = methodWrappers.listIterator();
+        Iterator<MethodWrapper> methodWrapperIterator = methodWrappers.listIterator();
 
-            while (methodWrapperIterator.hasNext()) {
-                MethodWrapper methodWrapper = methodWrapperIterator.next();
-                String methodPattern = methodWrapper.getPattern();
-                String text = event.getText();
+        while (methodWrapperIterator.hasNext()) {
+            MethodWrapper methodWrapper = methodWrapperIterator.next();
+            String methodPattern = methodWrapper.getPattern();
+            String text = event.getText();
 
-                if (!StringUtils.isEmpty(methodPattern) && !StringUtils.isEmpty(text)) {
-                    Pattern patter = Pattern.compile(methodPattern);
-                    Matcher matcher = patter.matcher(text);
-                    if (matcher.find()) {
-                        methodWrapper.setMatcher(matcher);
-                        return Optional.of(methodWrapper);
-                    } else {
-                        methodWrapperIterator.remove();
-                    }
+            if (!StringUtils.isEmpty(methodPattern) && !StringUtils.isEmpty(text)) {
+                Pattern patter = Pattern.compile(methodPattern);
+                Matcher matcher = patter.matcher(text);
+                if (matcher.find()) {
+                    methodWrapper.setMatcher(matcher);
+                    return Optional.of(methodWrapper);
+                } else {
+                    methodWrapperIterator.remove();
                 }
             }
         }
         return Optional.empty();
     }
 
+    /**
+     * Return new WebSocketClient for slack communication initialization
+     *
+     * @return StandardWebSocketClient new socket client
+     */
     private StandardWebSocketClient client() {
         return new StandardWebSocketClient();
     }
 
+    /**
+     * Return new Bot WebSocket Handler to handle websocket messages received from slack
+     *
+     * @return new bot websocket handler
+     */
     private BotWebSocketHandler handler() {
         return new BotWebSocketHandler(getSlackBot());
-    }
-
-    /**
-     * Entry point where the web socket connection starts
-     * and after which your bot becomes live.
-     */
-    @PostConstruct
-    private void startWebSocketConnection() {
-        slackService.startRTM(getSlackToken());
-        if (slackService.getWebSocketUrl() != null) {
-            WebSocketConnectionManager manager = new WebSocketConnectionManager(client(), handler(), slackService.getWebSocketUrl());
-            manager.start();
-        } else {
-            log.error("No websocket url returned by Slack.");
-        }
     }
 
 }
