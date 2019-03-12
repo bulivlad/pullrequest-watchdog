@@ -106,7 +106,7 @@ public abstract class Bot {
      * @param eventType the event to be handled
      */
     private void buildEventToMethodsMap(MethodWrapper methodWrapper, EventType eventType) {
-        List<MethodWrapper> methodWrappers = eventToMethodsMap.getOrDefault(eventType.name(), Collections.emptyList());
+        List<MethodWrapper> methodWrappers = eventToMethodsMap.getOrDefault(eventType.name(), new ArrayList<>());
 
         methodWrappers.add(methodWrapper);
         eventToMethodsMap.put(eventType.name(), methodWrappers);
