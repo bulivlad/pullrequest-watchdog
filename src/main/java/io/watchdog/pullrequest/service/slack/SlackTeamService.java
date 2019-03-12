@@ -106,6 +106,7 @@ public class SlackTeamService {
     }
 
     //add team rdc2-team with members [@vbulimac, @nbuhosu] and scheduler 0 20 11 1/1 * ? *
+    //(add team).*(members\s\[).*(\]).*(and\sscheduler ).*
 
     private SlackTeamDTO buildSlackTeamDTO(Event event) {
         String text = event.getText();

@@ -32,7 +32,7 @@ public class ReceiveController {
         this.slackTeamService = slackTeamService;
     }
 
-    @Controller(events = EventType.DIRECT_MENTION)
+    @Controller(events = EventType.DIRECT_MENTION, pattern = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler ).*")
     public void onReceiveMention(WebSocketSession session, Event event) {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
         boolean saved = slackTeamService.saveTeam(slackTeam);
