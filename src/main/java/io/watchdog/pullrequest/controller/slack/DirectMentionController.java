@@ -21,7 +21,7 @@ import org.springframework.web.socket.WebSocketSession;
 @Slf4j
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ReceiveController {
+public class DirectMentionController {
 
     private static final String ADD_TEAM_EVENT_REGEX = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler\\s).*";
 
@@ -29,7 +29,7 @@ public class ReceiveController {
     SlackTeamService slackTeamService;
 
     @Autowired
-    public ReceiveController(SlackBot slackBot, SlackTeamService slackTeamService) {
+    public DirectMentionController(SlackBot slackBot, SlackTeamService slackTeamService) {
         this.slackBot = slackBot;
         this.slackTeamService = slackTeamService;
     }
@@ -38,11 +38,16 @@ public class ReceiveController {
     public void onReceiveAddTeamMention(WebSocketSession session, Event event) {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
         boolean saved = slackTeamService.saveTeam(slackTeam);
-        if(!saved) {
-            slackBot.reply(session,event,new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId() + "> , team is already existing or it was already scheduled!"));
-            return ;
+        if (!saved) {
+            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId() + "> , team is already existing or it was already scheduled!"));
+            return;
         }
-        slackBot.reply(session,event,new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Scheduled " + saved + "!"));
+        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Scheduled " + saved + "!"));
+    }
+
+    @Controller(events = EventType.DIRECT_MENTION)
+    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about"));
     }
 
 }

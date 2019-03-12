@@ -32,4 +32,9 @@ public class DirectMessageController {
     public void onReceiveHealthCheckDirectMessage(WebSocketSession session, Event event) {
         slackBot.reply(session,event,new Message(":white_check_mark: I'm healthy. Thanks!"));
     }
+
+    @Controller(events = EventType.DIRECT_MESSAGE)
+    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about"));
+    }
 }
