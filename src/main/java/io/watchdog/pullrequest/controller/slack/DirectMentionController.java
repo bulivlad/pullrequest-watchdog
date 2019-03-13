@@ -24,6 +24,8 @@ import org.springframework.web.socket.WebSocketSession;
 public class DirectMentionController {
 
     private static final String ADD_TEAM_EVENT_REGEX = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler\\s).*";
+    private static final String REMOVE_TEAM_EVENT_REGEX = "(remove team\\s).*";
+    private static final String UNSCHEDULE_TEAM_EVENT_REGEX = "(unschedule team\\s).*";
 
     SlackBot slackBot;
     SlackTeamService slackTeamService;
@@ -43,6 +45,32 @@ public class DirectMentionController {
             return;
         }
         slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Scheduled " + saved + "!"));
+    }
+
+    @Controller(events = EventType.DIRECT_MENTION, pattern = REMOVE_TEAM_EVENT_REGEX)
+    public void onReceiveRemoveTeamMention(WebSocketSession session, Event event) {
+        String message = event.getText();
+        String teamName = message.substring(message.indexOf("team ") + 1);
+        String channel = event.getChannelId();
+        boolean removed = slackTeamService.removeTeam(channel, teamName);
+        if(!removed) {
+            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId() + "> , team could not be removed!"));
+            return;
+        }
+        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , team " + teamName +" removed!"));
+    }
+
+    @Controller(events = EventType.DIRECT_MENTION, pattern = UNSCHEDULE_TEAM_EVENT_REGEX)
+    public void onReceiveUnscheduleTeamMention(WebSocketSession session, Event event) {
+        String message = event.getText();
+        String teamName = message.substring(message.indexOf("team ") + 1);
+        String channel = event.getChannelId();
+        boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName);
+        if (!unscheduled) {
+            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId() + "> , team could not be unscheduled!"));
+            return;
+        }
+        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Unscheduled " + unscheduled + "!"));
     }
 
     @Controller(events = EventType.DIRECT_MENTION)

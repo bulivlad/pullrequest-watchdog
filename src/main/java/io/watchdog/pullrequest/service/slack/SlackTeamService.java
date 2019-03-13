@@ -161,4 +161,22 @@ public class SlackTeamService {
         return new CorrelatedUser(slackUser);
     }
 
+    public boolean removeTeam(String channel, String teamName) {
+        return teamService.deleteTeam(channel, teamName);
+    }
+
+    public boolean unscheduleTeam(String channel, String teamName) {
+        try{
+            SlackTeam slackTeam = teamService.getSpecificTeam(channel, teamName);
+            slackTeam.setCheckingSchedule(null);
+            teamService.updateTeam(slackTeam);
+        } catch (MongoWriteException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be updated!", ex);
+            return false;
+        } catch (SchedulerException ex) {
+            log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
+            return false;
+        }
+        return true;
+    }
 }

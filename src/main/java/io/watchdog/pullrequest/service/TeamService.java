@@ -75,9 +75,10 @@ public class TeamService {
                 Objects.equals(member.getBitbucketUser(), new BitbucketUser());
     }
 
-    public void deleteTeam(String channel, String teamName) {
+    public boolean deleteTeam(String channel, String teamName) {
         SlackTeam slackTeam = getSpecificTeam(channel, teamName);
         teamRepository.delete(slackTeam);
+        return true;
     }
 
     public SlackTeam getSpecificTeam(String channel, String teamName) {

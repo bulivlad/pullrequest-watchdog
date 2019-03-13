@@ -40,15 +40,21 @@ public class SchedulerService {
     }
 
     public boolean rescheduleEventForTeam(SlackTeam slackTeam) throws SchedulerException {
-        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
+        TriggerKey triggerKey =TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger");
+
+        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule()) && !scheduler.checkExists(triggerKey)){
             return false;
         }
 
         JobDetail jobDetail = buildJobDetail(slackTeam);
         Trigger trigger = buildJobTrigger(jobDetail, slackTeam);
-        TriggerKey triggerKey =TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger");
-        scheduler.rescheduleJob(triggerKey ,trigger);
 
+        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
+            scheduler.unscheduleJob(triggerKey);
+            return true;
+        }
+
+        scheduler.rescheduleJob(triggerKey ,trigger);
         return true;
     }
 
