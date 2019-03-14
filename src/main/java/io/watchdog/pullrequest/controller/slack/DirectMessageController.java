@@ -20,7 +20,7 @@ import org.springframework.web.socket.WebSocketSession;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DirectMessageController {
 
-    private static final String HEALTH_CHECK_MESSAGE_REGEX = "([A-Za-z\\s].*)(healthcheck)([A-Za-z\\s].*)";
+    private static final String HEALTH_CHECK_MESSAGE_REGEX = "([A-Za-z\\s].*)(?i)(healthcheck)([A-Za-z\\s].*)";
 
     SlackBot slackBot;
 

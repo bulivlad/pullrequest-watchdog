@@ -23,9 +23,9 @@ import org.springframework.web.socket.WebSocketSession;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DirectMentionController {
 
-    private static final String ADD_TEAM_EVENT_REGEX = "(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler\\s).*";
-    private static final String REMOVE_TEAM_EVENT_REGEX = "(remove team\\s).*";
-    private static final String UNSCHEDULE_TEAM_EVENT_REGEX = "(unschedule team\\s).*";
+    private static final String ADD_TEAM_EVENT_REGEX = "(?i)(add team).*(members\\s\\[).*(\\]).*(and\\sscheduler\\s).*";
+    private static final String REMOVE_TEAM_EVENT_REGEX = "(?i)(remove team\\s).*";
+    private static final String UNSCHEDULE_TEAM_EVENT_REGEX = "(?i)(unschedule team\\s).*";
 
     SlackBot slackBot;
     SlackTeamService slackTeamService;
