@@ -56,4 +56,5 @@ public class BitbucketSlackbotApplication {
 	public LocalValidatorFactoryBean validator() {
 		return new LocalValidatorFactoryBean();
 	}
+
 }

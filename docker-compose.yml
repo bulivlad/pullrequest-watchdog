@@ -4,7 +4,7 @@ services:
 
   watchdog:
     container_name: pullrequests-watchdog
-    image: dotinc/pullrequest-watchdog
+    image: dotinc/pullrequest-watchdog:latest
     ports:
       - "9010:9010"
     depends_on:
@@ -22,6 +22,10 @@ services:
       #MongoDB details
       - SPRING_DATA_MONGODB_HOST=mongodb
       - SPRING_DATA_MONGODB_port=27017
+
+      #Security details
+      - SPRING_SECURITY_USER_NAME
+      - SPRING_SECURITY_USER_PASSWORD
 
   mongo:
     image: mongo:3.6
