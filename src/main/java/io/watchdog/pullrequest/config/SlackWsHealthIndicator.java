@@ -13,18 +13,17 @@ public class SlackWsHealthIndicator extends AbstractHealthIndicator {
     private final WebSocketConnectionManager webSocketConnectionManager;
 
     public SlackWsHealthIndicator(SlackBot slackBot) {
-        super("SlackWs health check failed");
+        super((exception) -> "SlackWs health check failed because of " + exception);
         this.webSocketConnectionManager = slackBot.getWebSocketConnectionManager();
     }
 
     @Override
     protected void doHealthCheck(Health.Builder builder) {
         boolean result = webSocketConnectionManager.isRunning();
-        if(result){
-            builder.up().withDetail("autoStartup", webSocketConnectionManager.isAutoStartup()).build();
-        } else {
-            builder.down().build();
-        }
+        builder.up()
+                .withDetail("WebSocketRunning", result)
+                .withDetail("autoStartup", webSocketConnectionManager.isAutoStartup())
+                .build();
     }
 
 }
