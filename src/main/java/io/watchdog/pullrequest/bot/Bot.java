@@ -40,6 +40,7 @@ public abstract class Bot {
     private final List<String> conversationMethodNames = new ArrayList<>();
     private final Map<String, List<MethodWrapper>> eventToMethodsMap = new HashMap<>();
     private final Map<String, Queue<MethodWrapper>> conversationQueueMap = new HashMap<>();
+    private WebSocketConnectionManager webSocketConnectionManager;
 
     @Autowired
     private ApplicationContext сontext;
@@ -50,6 +51,7 @@ public abstract class Bot {
     @Autowired
     protected SlackService slackService;
 
+
     /**
      * Entry point where the web socket connection starts
      * and after which your bot becomes live.
@@ -58,8 +60,8 @@ public abstract class Bot {
     private void startWebSocketConnection() {
         slackService.startRTM(getSlackToken());
         if (slackService.getWebSocketUrl() != null) {
-            WebSocketConnectionManager manager = new WebSocketConnectionManager(client(), handler(), slackService.getWebSocketUrl());
-            manager.start();
+            webSocketConnectionManager = new WebSocketConnectionManager(client(), handler(), slackService.getWebSocketUrl());
+            webSocketConnectionManager.start();
         } else {
             log.error("No websocket url returned by Slack.");
         }
@@ -85,6 +87,10 @@ public abstract class Bot {
                     }
                     methodNameMap.put(method.getName(), methodWrapper);
                 });
+    }
+
+    public WebSocketConnectionManager getWebSocketConnectionManager() {
+        return webSocketConnectionManager;
     }
 
     /**

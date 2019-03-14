@@ -1,5 +1,6 @@
 package io.watchdog.pullrequest;
 
+import io.watchdog.pullrequest.bot.SlackBot;
 import io.watchdog.pullrequest.config.AuthConfig;
 import io.watchdog.pullrequest.config.RepositoryConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,9 @@ public class BitbucketSlackbotApplication {
 	private final RepositoryConfig repositoryConfig;
 
 	@Autowired
+	private SlackBot w;
+
+	@Autowired
 	public BitbucketSlackbotApplication(AuthConfig authConfig,
 										RepositoryConfig repositoryConfig) {
 		this.authConfig = authConfig;
@@ -35,7 +39,10 @@ public class BitbucketSlackbotApplication {
 
 	@Bean
 	public CommandLineRunner commandLineRunner() {
-		return strings -> log.info("App started");
+		return strings -> {
+			log.info("App started");
+			w.getWebSocketConnectionManager().isRunning();
+		};
 	}
 
 	@Bean
