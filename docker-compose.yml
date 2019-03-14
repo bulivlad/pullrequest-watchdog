@@ -4,7 +4,7 @@ services:
 
   watchdog:
     container_name: pullrequests-watchdog
-    image: dotinc/pullrequest-watchdog
+    image: dotinc/pullrequest-watchdog:latest
     ports:
       - "9010:9010"
     depends_on:
