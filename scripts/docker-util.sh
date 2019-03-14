@@ -9,8 +9,9 @@
 # THE SCRIPT SHOULD ONLY BE USED AFTER A NEW GIT TAG WAS PUSHED
 # Usage: ./docker-util.sh <parameters>
 # parameters:
-#           -b  build the images
-#           -p  publish the images
+#           -b          build the images
+#           -p          publish the images
+#           [-t<=tag>]    build the image with a specific tag
 
 CURRENT_VERSION="$( git describe --tags --exact-match )"
 set -e
@@ -20,11 +21,12 @@ ROOT_DIR="${SCRIPT_DIR}/../"
 
 IMAGE_REPO="dotinc"
 IMAGE_NAME="pullrequest-watchdog"
+IMAGE_PATH="${IMAGE_REPO}/${IMAGE_NAME}"
 
 DOCKER_USERNAME=""
 DOCKER_PASSWORD=""
 
-while getopts ":bph" arg; do
+while getopts ":bpht:" arg; do
     case $arg in
         h)
             echo -e "usage ./docker-util.sh <parameters>"
@@ -37,6 +39,13 @@ while getopts ":bph" arg; do
             ;;
         p)
             PUSH_IMAGES="true"
+            ;;
+        t)
+            if [[ -z $OPTARG ]] || ( [[ -z "${PUSH_IMAGES}" && -z "${BUILD_IMAGES}" ]] ); then
+                echo "Option -$arg requires an argument or at least on of -b or -p are missing." >&2
+                exit 1
+            fi
+            INPUT_TAG=$OPTARG
             ;;
         \?)
           echo "Invalid option: -$OPTARG" >&2
@@ -57,14 +66,14 @@ function build_jar() {
 }
 function build_docker_image() {
     build_jar
-    FULL_IMAGE_NAME="${IMAGE_REPO}/${IMAGE_NAME}:${1}"
+    FULL_IMAGE_NAME="${IMAGE_PATH}:${1}"
 
     echo -e "\nBuilding image ${1}"
     docker build -t "${FULL_IMAGE_NAME}" .
 }
 
 function push_docker_image() {
-    FULL_IMAGE_NAME="${IMAGE_REPO}/${IMAGE_NAME}:${1}"
+    FULL_IMAGE_NAME="${IMAGE_PATH}:${1}"
     build_docker_image ${1}
 
     echo -e "Pushing image ${1}"
@@ -90,7 +99,8 @@ function login() {
 }
 
 if [[ ! -z "${BUILD_IMAGES}" ]]; then
-    build_docker_image "latest"
+    build_docker_image "${CURRENT_VERSION:-dev}"
+    build_docker_image "${INPUT_TAG:-latest}"
 fi
 
 if [[ ! -z "${PUSH_IMAGES}" ]]; then
@@ -100,5 +110,5 @@ if [[ ! -z "${PUSH_IMAGES}" ]]; then
     fi
     login
     push_docker_image "${CURRENT_VERSION:-dev}"
-    push_docker_image "latest"
+    push_docker_image "${INPUT_TAG:-latest}"
 fi
