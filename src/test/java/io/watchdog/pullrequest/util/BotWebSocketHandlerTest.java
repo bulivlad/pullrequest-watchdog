@@ -8,20 +8,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
 
 /**
  * @author vladbulimac on 15/03/2019.
  */
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(SlackBot.class)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BotWebSocketHandlerTest {
 
@@ -35,7 +38,6 @@ public class BotWebSocketHandlerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
     }
 
     @Test
@@ -49,9 +51,11 @@ public class BotWebSocketHandlerTest {
     public void handleTextMessage() throws Exception {
         TextMessage textMessage = new TextMessage("{\"type\":\"ACK\"}");
 
+        doNothing().when(slackBot).handleTextMessage(any(), any());
+
         botWebSocketHandler.handleTextMessage(webSocketSession, textMessage);
 
-        verify(slackBot).handleTextMessage(eq(webSocketSession), textMessage);
+        verify(slackBot).handleTextMessage(eq(webSocketSession), eq(textMessage));
     }
 
     @Test
