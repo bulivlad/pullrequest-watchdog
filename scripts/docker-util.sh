@@ -26,13 +26,14 @@ IMAGE_PATH="${IMAGE_REPO}/${IMAGE_NAME}"
 DOCKER_USERNAME=""
 DOCKER_PASSWORD=""
 
-while getopts ":bpht:" arg; do
+while getopts ":hbpt:" arg; do
     case $arg in
         h)
             echo -e "usage ./docker-util.sh <parameters>"
             echo -e "\tparamters:"
             echo -e "\t\t-b\tbuild the images"
             echo -e "\t\t-p\tpush the images to docker hub"
+            echo -e "\t\t[-t<=tag>]    build the image with a specific tag"
             ;;
         b)
             BUILD_IMAGES="true"

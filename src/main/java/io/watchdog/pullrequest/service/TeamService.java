@@ -82,7 +82,8 @@ public class TeamService {
     }
 
     public SlackTeam getSpecificTeam(String channel, String teamName) {
-        return teamRepository.findSlackTeamByChannelAndName(channel, teamName);
+        return teamRepository.findSlackTeamByChannelAndName(channel, teamName)
+                .orElse(SlackTeam.builder().channel(channel).name(teamName).build());
     }
 
     private BitbucketUser buildBitbucketUsersForTeam(SlackUser slackUser) {

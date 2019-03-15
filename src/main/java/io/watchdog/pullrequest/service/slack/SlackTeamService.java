@@ -10,6 +10,7 @@ import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.service.PullRequestRetrieveService;
 import io.watchdog.pullrequest.service.TeamService;
+import io.watchdog.pullrequest.util.BotUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.watchdog.pullrequest.model.slack.SlackEventMapping.ADD_TEAM_EVENT_REGEX;
 
 /**
  * @author vladclaudiubulimac on 2019-03-05.
@@ -114,9 +117,9 @@ public class SlackTeamService {
 
         SlackTeamDTO slackTeamDTO = new SlackTeamDTO();
         slackTeamDTO.setChannel(event.getChannelId());
-        slackTeamDTO.setTeamName(StringUtils.substringBetween(text, "team ", " ").trim());
-        slackTeamDTO.setMembers(StringUtils.substringBetween(text, "members [", "]").trim().split(","));
-        slackTeamDTO.setScheduler(StringUtils.substringAfter(text, "scheduler "));
+        slackTeamDTO.setTeamName(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "teamName").orElse("").trim());
+        slackTeamDTO.setMembers(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "members").orElse("").trim().split(","));
+        slackTeamDTO.setScheduler(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "schedulerExpression").orElse(""));
         log.debug("Got messages team name '{}' members '{}' scheduler '{}'", slackTeamDTO.getTeamName(),
                 slackTeamDTO.getMembers(),
                 slackTeamDTO.getScheduler());
@@ -162,7 +165,12 @@ public class SlackTeamService {
     }
 
     public boolean removeTeam(String channel, String teamName) {
-        return teamService.deleteTeam(channel, teamName);
+        try {
+            return teamService.deleteTeam(channel, teamName);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
+        }
+        return false;
     }
 
     public boolean unscheduleTeam(String channel, String teamName) {
@@ -175,6 +183,9 @@ public class SlackTeamService {
             return false;
         } catch (SchedulerException ex) {
             log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
+            return false;
+        } catch (Exception ex) {
+            log.error("Unexpected error when tried to handle team " + teamName + " in channel " + channel, ex);
             return false;
         }
         return true;

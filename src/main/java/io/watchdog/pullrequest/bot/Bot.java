@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.watchdog.pullrequest.model.slack.MethodWrapper;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
 import lombok.extern.slf4j.Slf4j;
-import me.ramswaroop.jbot.core.slack.Controller;
 import me.ramswaroop.jbot.core.slack.EventType;
 import me.ramswaroop.jbot.core.slack.SlackService;
 import me.ramswaroop.jbot.core.slack.models.Event;
@@ -78,7 +77,7 @@ public abstract class Bot {
                         conversationMethodNames.add(next);
                     }
 
-                    String pattern = controller.pattern();
+                    String pattern = controller.pattern().getValue();
                     MethodWrapper methodWrapper = MethodWrapper.builder().method(method).pattern(pattern).next(next).build();
 
                     if (!conversationMethodNames.contains(method.getName())) {
@@ -309,17 +308,22 @@ public abstract class Bot {
      */
     private void invokeMethods(WebSocketSession session, Event event) {
         try {
-            List<MethodWrapper> methodWrappers = new ArrayList<>(eventToMethodsMap.getOrDefault(event.getType().toUpperCase(), Collections.emptyList()));
+            List<MethodWrapper> methodWrappers = Collections.unmodifiableList(
+                    eventToMethodsMap.getOrDefault(event.getType().toUpperCase(), Collections.emptyList()));
 
-            getMethodWithMatchingPatternAndFilterUnmatchedMethods(event, methodWrappers).ifPresent(methodWrappers::add);
+            Optional<MethodWrapper> maybeMethodWrapper = getMethodWithMatchingPatternOrDefaultMethod(event, methodWrappers);
+            if(!maybeMethodWrapper.isPresent()) {
+                log.trace("No method matched the event {}", event.getType());
+                return ;
+            }
 
-            for (MethodWrapper methodWrapper : methodWrappers) {
-                Method method = methodWrapper.getMethod();
-                if (method.getParameterCount() == 3) {
-                    method.invoke(this, session, event, methodWrapper.getMatcher());
-                } else {
-                    method.invoke(сontext.getBean(method.getDeclaringClass()), session, event);
-                }
+            MethodWrapper methodWrapper = maybeMethodWrapper.get();
+            Method method = methodWrapper.getMethod();
+
+            if (method.getParameterCount() == 3) {
+                method.invoke(this, session, event, methodWrapper.getMatcher());
+            } else {
+                method.invoke(сontext.getBean(method.getDeclaringClass()), session, event);
             }
         } catch (Exception e) {
             log.error("Error invoking controller: ", e);
@@ -362,11 +366,12 @@ public abstract class Bot {
      * @return the MethodWrapper whose method pattern match with that of the slack message received, {@code null} if no
      * such method is found.
      */
-    private Optional<MethodWrapper> getMethodWithMatchingPatternAndFilterUnmatchedMethods(Event event, List<MethodWrapper> methodWrappers) {
-        Iterator<MethodWrapper> methodWrapperIterator = methodWrappers.listIterator();
+    private Optional<MethodWrapper> getMethodWithMatchingPatternOrDefaultMethod(Event event, List<MethodWrapper> methodWrappers) {
+        Optional<MethodWrapper> maybeDefaultMethod = methodWrappers.stream()
+                .filter(method -> "".equals(method.getPattern()))
+                .findAny();
 
-        while (methodWrapperIterator.hasNext()) {
-            MethodWrapper methodWrapper = methodWrapperIterator.next();
+        for (MethodWrapper methodWrapper : methodWrappers) {
             String methodPattern = methodWrapper.getPattern();
             String text = event.getText();
 
@@ -376,12 +381,10 @@ public abstract class Bot {
                 if (matcher.find()) {
                     methodWrapper.setMatcher(matcher);
                     return Optional.of(methodWrapper);
-                } else {
-                    methodWrapperIterator.remove();
                 }
             }
         }
-        return Optional.empty();
+        return maybeDefaultMethod;
     }
 
     /**

@@ -46,15 +46,17 @@ public class SchedulerService {
             return false;
         }
 
-        JobDetail jobDetail = buildJobDetail(slackTeam);
-        Trigger trigger = buildJobTrigger(jobDetail, slackTeam);
-
         if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
             scheduler.unscheduleJob(triggerKey);
+            log.debug("Unscheduled the job {}", triggerKey.getName());
             return true;
         }
 
+        JobDetail jobDetail = buildJobDetail(slackTeam);
+        Trigger trigger = buildJobTrigger(jobDetail, slackTeam);
+
         scheduler.rescheduleJob(triggerKey ,trigger);
+        log.debug("Rescheduled the job {}", triggerKey.getName());
         return true;
     }
 
