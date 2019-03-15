@@ -44,6 +44,7 @@ dependencies {
 	compile('commons-lang:commons-lang:2.6')
 	compile("me.ramswaroop.jbot:jbot:3.0.2")
 	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testCompile('org.springframework.security:spring-security-test')
 }
 
 configurations {
