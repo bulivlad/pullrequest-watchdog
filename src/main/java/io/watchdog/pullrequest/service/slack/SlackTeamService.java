@@ -47,7 +47,9 @@ public class SlackTeamService {
     SlackApiRestService slackApiRestService;
 
     @Autowired
-    public SlackTeamService(TeamService teamService, PullRequestRetrieveService pullRequestRetrieveService, SlackApiRestService slackApiRestService) {
+    public SlackTeamService(TeamService teamService,
+                            PullRequestRetrieveService pullRequestRetrieveService,
+                            SlackApiRestService slackApiRestService) {
         this.teamService = teamService;
         this.pullRequestRetrieveService = pullRequestRetrieveService;
         this.slackApiRestService = slackApiRestService;

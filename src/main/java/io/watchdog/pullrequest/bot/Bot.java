@@ -2,6 +2,7 @@ package io.watchdog.pullrequest.bot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.watchdog.pullrequest.model.slack.MethodWrapper;
+import io.watchdog.pullrequest.model.slack.SlackEventMapping;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
 import lombok.extern.slf4j.Slf4j;
 import me.ramswaroop.jbot.core.slack.EventType;
@@ -368,7 +369,7 @@ public abstract class Bot {
      */
     private Optional<MethodWrapper> getMethodWithMatchingPatternOrDefaultMethod(Event event, List<MethodWrapper> methodWrappers) {
         Optional<MethodWrapper> maybeDefaultMethod = methodWrappers.stream()
-                .filter(method -> "".equals(method.getPattern()))
+                .filter(method -> SlackEventMapping.DEFAULT.getValue().equals(method.getPattern()))
                 .findAny();
 
         for (MethodWrapper methodWrapper : methodWrappers) {
