@@ -47,6 +47,9 @@ while getopts ":hbpt:" arg; do
                 exit 1
             fi
             INPUT_TAG=$OPTARG
+            if [[ "${INPUT_TAG}" == "beta" ]]; then
+                CURRENT_VERSION="${CURRENT_VERSION:-beta}"
+            fi
             ;;
         \?)
           echo "Invalid option: -$OPTARG" >&2

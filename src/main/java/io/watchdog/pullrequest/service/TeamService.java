@@ -60,7 +60,7 @@ public class TeamService {
         SlackTeam existingTeam = getSpecificTeam(slackTeam.getChannel(), slackTeam.getName());
         schedulerService.rescheduleEventForTeam(slackTeam);
 
-        if(CollectionUtils.isEmpty(slackTeam.getMembers())){
+        if(!CollectionUtils.isEmpty(slackTeam.getMembers())){
             slackTeam.getMembers().stream()
                     .filter(this::isBitbucketUserMissing)
                     .forEach(member -> member.setBitbucketUser(buildBitbucketUsersForTeam(member.getSlackUser())));

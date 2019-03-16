@@ -39,6 +39,7 @@ import static io.watchdog.pullrequest.model.slack.SlackEventMapping.ADD_TEAM_EVE
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SlackTeamService {
     private final static String START_SLACK_MESSAGE_TEMPLATE = "PRs waiting for reviewers today:\n";
+    private final static String NO_PR_SLACK_MESSAGE_TEMPLATE = ":woohoo: No PRs to be reviewed today !\n";
     // {name} - {link} - {users}
     private final static String BODY_SLACK_MESSAGE_TEMPLATE = "%s - %s - %s";
 
@@ -131,7 +132,6 @@ public class SlackTeamService {
 
     private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs, List<CorrelatedUser> bitbucketUserDTOs){
         List<String> messages = new ArrayList<>();
-        messages.add(START_SLACK_MESSAGE_TEMPLATE);
 
         unapprovedPRs.filter(pullRequestDTO -> !CollectionUtils.isEmpty(pullRequestDTO.getReviewers()))
                 .forEach(pullRequestDTO -> {
@@ -140,7 +140,13 @@ public class SlackTeamService {
                             .forEach((value) -> stringBuilder.append("<@").append(getSlackUserMention(bitbucketUserDTOs.stream(), value.getUsername())).append("> "));
                     messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
                 });
+
+        messages.add(0, getMessageHeader(messages));
         return messages;
+    }
+
+    private String getMessageHeader(List<String> messages) {
+        return messages.isEmpty() ? NO_PR_SLACK_MESSAGE_TEMPLATE : START_SLACK_MESSAGE_TEMPLATE;
     }
 
     private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerUsername){
