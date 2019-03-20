@@ -19,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/team")
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TeamController {
 
     TeamService teamService;
@@ -66,6 +66,17 @@ public class TeamController {
                 .affectedEntity(slackTeam.getClass().getSimpleName())
                 .entityName(slackTeam.getName())
                 .scheduled(updated)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping(path = "/{teamName}/{channelName}/unschedule/", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity unscheduleTeam(@PathVariable String teamName, @PathVariable String channelName) {
+        boolean unscheduled = slackTeamService.unscheduleTeam(channelName, teamName);
+        RestResponse response = RestResponse.builder()
+                .entityName(teamName)
+                .scheduled(unscheduled)
                 .build();
         return ResponseEntity.ok(response);
     }

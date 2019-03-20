@@ -60,7 +60,7 @@ public class TeamService {
         SlackTeam existingTeam = getSpecificTeam(slackTeam.getChannel(), slackTeam.getName());
         schedulerService.rescheduleEventForTeam(slackTeam);
 
-        if(CollectionUtils.isEmpty(slackTeam.getMembers())){
+        if(!CollectionUtils.isEmpty(slackTeam.getMembers())){
             slackTeam.getMembers().stream()
                     .filter(this::isBitbucketUserMissing)
                     .forEach(member -> member.setBitbucketUser(buildBitbucketUsersForTeam(member.getSlackUser())));
@@ -75,13 +75,15 @@ public class TeamService {
                 Objects.equals(member.getBitbucketUser(), new BitbucketUser());
     }
 
-    public void deleteTeam(String channel, String teamName) {
+    public boolean deleteTeam(String channel, String teamName) {
         SlackTeam slackTeam = getSpecificTeam(channel, teamName);
         teamRepository.delete(slackTeam);
+        return true;
     }
 
     public SlackTeam getSpecificTeam(String channel, String teamName) {
-        return teamRepository.findSlackTeamByChannelAndName(channel, teamName);
+        return teamRepository.findSlackTeamByChannelAndName(channel, teamName)
+                .orElse(SlackTeam.builder().channel(channel).name(teamName).build());
     }
 
     private BitbucketUser buildBitbucketUsersForTeam(SlackUser slackUser) {

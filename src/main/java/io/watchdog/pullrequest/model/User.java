@@ -8,6 +8,8 @@ import lombok.experimental.FieldDefaults;
  */
 
 @Data
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)

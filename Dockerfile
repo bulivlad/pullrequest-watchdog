@@ -2,7 +2,7 @@ FROM openjdk:8-jre-alpine
 
 LABEL MAINTAINER = "Vlad Bulimac <buli.vlad@gmail.com>"
 
-EXPOSE 9090
+EXPOSE 9010
 
 RUN mkdir -p /opt/watchdog
 

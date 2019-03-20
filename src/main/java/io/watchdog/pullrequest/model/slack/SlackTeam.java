@@ -1,10 +1,7 @@
 package io.watchdog.pullrequest.model.slack;
 
 import io.watchdog.pullrequest.model.CorrelatedUser;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NonNull;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -26,6 +23,7 @@ public class SlackTeam {
 
     @Id
     String id;
+    @Singular
     List<CorrelatedUser> members;
     @NonNull
     String channel;
