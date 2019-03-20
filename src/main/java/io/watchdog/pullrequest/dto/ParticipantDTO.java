@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.watchdog.pullrequest.model.Role;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 
 /**
@@ -12,6 +13,7 @@ import lombok.experimental.FieldDefaults;
  */
 
 @Data
+@EqualsAndHashCode
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ParticipantDTO {

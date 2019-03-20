@@ -39,7 +39,7 @@ public class PullRequestRetrieveService {
         this.repositoryConfig = repositoryConfig;
     }
 
-    public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviwers(List<String> reviewers) {
+    public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviewers(List<String> reviewers) {
         Map<String, List<ReviewerDTO>> unapprovedPRs = new HashMap<>();
         Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
         teamUnapprovedPullRequests.forEach(pullRequestDTO -> {
