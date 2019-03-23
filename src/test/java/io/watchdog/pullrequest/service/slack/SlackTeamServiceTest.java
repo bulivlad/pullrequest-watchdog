@@ -320,7 +320,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeamOrNewTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
         when(teamService.updateTeam(eq(slackTeam))).thenReturn(slackTeam);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);
@@ -338,7 +338,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeamOrNewTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
         when(teamService.updateTeam(eq(slackTeam))).thenThrow(MongoWriteException.class);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);
@@ -356,7 +356,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeamOrNewTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
         when(teamService.updateTeam(eq(slackTeam))).thenThrow(SchedulerException.class);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);
