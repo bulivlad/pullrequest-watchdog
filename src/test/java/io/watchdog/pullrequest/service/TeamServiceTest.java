@@ -217,7 +217,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    public void deleteTeam() {
+    public void deleteTeam() throws SchedulerException {
         String channel = "channel";
         String teamName = "teamName";
 
