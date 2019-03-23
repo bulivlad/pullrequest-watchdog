@@ -22,26 +22,28 @@ public class BotWebSocketHandler extends AbstractWebSocketHandler {
         this.bot = bot;
     }
 
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) {
         bot.afterConnectionEstablished(session);
     }
 
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    @Override
+    public void handleTextMessage(WebSocketSession session, TextMessage message) {
         bot.handleTextMessage(session, message);
     }
 
     @Override
-    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
+    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
         log.error("Binary messages are not supported in Slack RTM API");
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         bot.afterConnectionClosed(session, status);
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
         bot.handleTransportError(session, exception);
     }
 }

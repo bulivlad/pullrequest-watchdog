@@ -19,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/team")
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TeamController {
 
     TeamService teamService;
@@ -45,7 +45,7 @@ public class TeamController {
     @GetMapping(path = "/{teamName}/{channelName}/",
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody SlackTeam getSpecificTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        return teamService.getSpecificTeam(channelName, teamName);
+        return teamService.getSpecificTeamOrNewTeam(channelName, teamName);
     }
 
     @PostMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -70,10 +70,21 @@ public class TeamController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping(path = "/{teamName}/{channelName}/unschedule/", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity unscheduleTeam(@PathVariable String teamName, @PathVariable String channelName) {
+        boolean unscheduled = slackTeamService.unscheduleTeam(channelName, teamName);
+        RestResponse response = RestResponse.builder()
+                .entityName(teamName)
+                .scheduled(unscheduled)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping(path = "/{teamName}/{channelName}/",
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity removeTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        teamService.deleteTeam(channelName, teamName);
+        slackTeamService.removeTeam(channelName, teamName);
         RestResponse response = RestResponse.builder().entityName(teamName).build();
         return ResponseEntity.ok(response);
     }

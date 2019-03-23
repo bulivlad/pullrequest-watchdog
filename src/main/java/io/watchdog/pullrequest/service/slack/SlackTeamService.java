@@ -4,12 +4,14 @@ import com.mongodb.MongoWriteException;
 import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
+import io.watchdog.pullrequest.exception.SlackTeamNotFoundException;
 import io.watchdog.pullrequest.model.CorrelatedUser;
 import io.watchdog.pullrequest.model.User;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.service.PullRequestRetrieveService;
 import io.watchdog.pullrequest.service.TeamService;
+import io.watchdog.pullrequest.util.BotUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.watchdog.pullrequest.model.slack.SlackEventMapping.ADD_TEAM_EVENT_REGEX;
+
 /**
  * @author vladclaudiubulimac on 2019-03-05.
  */
@@ -36,6 +40,7 @@ import java.util.stream.Stream;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SlackTeamService {
     private final static String START_SLACK_MESSAGE_TEMPLATE = "PRs waiting for reviewers today:\n";
+    private final static String NO_PR_SLACK_MESSAGE_TEMPLATE = ":woohoo: No PRs to be reviewed today !\n";
     // {name} - {link} - {users}
     private final static String BODY_SLACK_MESSAGE_TEMPLATE = "%s - %s - %s";
 
@@ -44,7 +49,9 @@ public class SlackTeamService {
     SlackApiRestService slackApiRestService;
 
     @Autowired
-    public SlackTeamService(TeamService teamService, PullRequestRetrieveService pullRequestRetrieveService, SlackApiRestService slackApiRestService) {
+    public SlackTeamService(TeamService teamService,
+                            PullRequestRetrieveService pullRequestRetrieveService,
+                            SlackApiRestService slackApiRestService) {
         this.teamService = teamService;
         this.pullRequestRetrieveService = pullRequestRetrieveService;
         this.slackApiRestService = slackApiRestService;
@@ -114,9 +121,9 @@ public class SlackTeamService {
 
         SlackTeamDTO slackTeamDTO = new SlackTeamDTO();
         slackTeamDTO.setChannel(event.getChannelId());
-        slackTeamDTO.setTeamName(StringUtils.substringBetween(text, "team ", " ").trim());
-        slackTeamDTO.setMembers(StringUtils.substringBetween(text, "members [", "]").trim().split(","));
-        slackTeamDTO.setScheduler(StringUtils.substringAfter(text, "scheduler "));
+        slackTeamDTO.setTeamName(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "teamName").orElse("").trim());
+        slackTeamDTO.setMembers(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "members").orElse("").trim().split(","));
+        slackTeamDTO.setScheduler(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "schedulerExpression").orElse(""));
         log.debug("Got messages team name '{}' members '{}' scheduler '{}'", slackTeamDTO.getTeamName(),
                 slackTeamDTO.getMembers(),
                 slackTeamDTO.getScheduler());
@@ -126,7 +133,6 @@ public class SlackTeamService {
 
     private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs, List<CorrelatedUser> bitbucketUserDTOs){
         List<String> messages = new ArrayList<>();
-        messages.add(START_SLACK_MESSAGE_TEMPLATE);
 
         unapprovedPRs.filter(pullRequestDTO -> !CollectionUtils.isEmpty(pullRequestDTO.getReviewers()))
                 .forEach(pullRequestDTO -> {
@@ -135,7 +141,13 @@ public class SlackTeamService {
                             .forEach((value) -> stringBuilder.append("<@").append(getSlackUserMention(bitbucketUserDTOs.stream(), value.getUsername())).append("> "));
                     messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
                 });
+
+        messages.add(0, getMessageHeader(messages));
         return messages;
+    }
+
+    private String getMessageHeader(List<String> messages) {
+        return messages.isEmpty() ? NO_PR_SLACK_MESSAGE_TEMPLATE : START_SLACK_MESSAGE_TEMPLATE;
     }
 
     private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerUsername){
@@ -161,4 +173,36 @@ public class SlackTeamService {
         return new CorrelatedUser(slackUser);
     }
 
+    public boolean removeTeam(String channel, String teamName) {
+        try {
+            return teamService.deleteTeam(channel, teamName);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
+        } catch (SchedulerException ex) {
+            log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
+        }
+        return false;
+    }
+
+    public boolean unscheduleTeam(String channel, String teamName) {
+        try{
+            SlackTeam slackTeam = teamService.getSpecificTeam(channel, teamName)
+                    .orElseThrow(() -> new SlackTeamNotFoundException("Team " + teamName + " not found in channel " + channel));
+            slackTeam.setCheckingSchedule(null);
+            teamService.updateTeam(slackTeam);
+        } catch (MongoWriteException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be updated!", ex);
+            return false;
+        } catch (SchedulerException ex) {
+            log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
+            return false;
+        } catch (SlackTeamNotFoundException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
+            return false;
+        } catch (Exception ex) {
+            log.error("Unexpected error when tried to handle team " + teamName + " in channel " + channel, ex);
+            return false;
+        }
+        return true;
+    }
 }

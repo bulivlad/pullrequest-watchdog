@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
+ * Class used to schedule jobs after a team was added/updated
+ *
  * @author vladclaudiubulimac on 2019-03-05.
  */
 
@@ -40,15 +42,23 @@ public class SchedulerService {
     }
 
     public boolean rescheduleEventForTeam(SlackTeam slackTeam) throws SchedulerException {
-        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
+        TriggerKey triggerKey = TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger");
+
+        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule()) && !scheduler.checkExists(triggerKey)){
             return false;
+        }
+
+        if(StringUtils.isEmpty(slackTeam.getCheckingSchedule())){
+            scheduler.unscheduleJob(triggerKey);
+            log.debug("Unscheduled the job {}", triggerKey.getName());
+            return true;
         }
 
         JobDetail jobDetail = buildJobDetail(slackTeam);
         Trigger trigger = buildJobTrigger(jobDetail, slackTeam);
-        TriggerKey triggerKey =TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger");
-        scheduler.rescheduleJob(triggerKey ,trigger);
 
+        scheduler.rescheduleJob(triggerKey ,trigger);
+        log.debug("Rescheduled the job {}", triggerKey.getName());
         return true;
     }
 

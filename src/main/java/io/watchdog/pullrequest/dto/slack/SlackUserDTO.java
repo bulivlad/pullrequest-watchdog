@@ -23,7 +23,7 @@ public class SlackUserDTO {
 
     @Data
     @ToString
-    private class User {
+    public class User {
         String id;
         String email;
         String displayName;

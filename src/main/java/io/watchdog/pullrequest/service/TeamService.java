@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author vladclaudiubulimac on 2019-03-03.
@@ -57,10 +58,10 @@ public class TeamService {
     }
 
     public SlackTeam updateTeam(SlackTeam slackTeam) throws SchedulerException {
-        SlackTeam existingTeam = getSpecificTeam(slackTeam.getChannel(), slackTeam.getName());
+        SlackTeam existingTeam = getSpecificTeamOrNewTeam(slackTeam.getChannel(), slackTeam.getName());
         schedulerService.rescheduleEventForTeam(slackTeam);
 
-        if(CollectionUtils.isEmpty(slackTeam.getMembers())){
+        if(!CollectionUtils.isEmpty(slackTeam.getMembers())){
             slackTeam.getMembers().stream()
                     .filter(this::isBitbucketUserMissing)
                     .forEach(member -> member.setBitbucketUser(buildBitbucketUsersForTeam(member.getSlackUser())));
@@ -75,12 +76,19 @@ public class TeamService {
                 Objects.equals(member.getBitbucketUser(), new BitbucketUser());
     }
 
-    public void deleteTeam(String channel, String teamName) {
-        SlackTeam slackTeam = getSpecificTeam(channel, teamName);
+    public boolean deleteTeam(String channel, String teamName) throws SchedulerException {
+        SlackTeam slackTeam = getSpecificTeamOrNewTeam(channel, teamName);
+        schedulerService.rescheduleEventForTeam(slackTeam);
         teamRepository.delete(slackTeam);
+        return true;
     }
 
-    public SlackTeam getSpecificTeam(String channel, String teamName) {
+    public SlackTeam getSpecificTeamOrNewTeam(String channel, String teamName) {
+        return teamRepository.findSlackTeamByChannelAndName(channel, teamName)
+                .orElse(SlackTeam.builder().channel(channel).name(teamName).build());
+    }
+
+    public Optional<SlackTeam> getSpecificTeam(String channel, String teamName) {
         return teamRepository.findSlackTeamByChannelAndName(channel, teamName);
     }
 

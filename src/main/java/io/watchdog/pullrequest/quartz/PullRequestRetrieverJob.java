@@ -56,7 +56,6 @@ public class PullRequestRetrieverJob implements Job {
         return SlackMessageRequestDTO.builder()
                     .channel(mergedJobDataMap.getString("channel"))
                     .blocks(buildMessageBlocks(messagesList))
-                    .iconEmoji(":white_check_mark:")
                     .build();
     }
 

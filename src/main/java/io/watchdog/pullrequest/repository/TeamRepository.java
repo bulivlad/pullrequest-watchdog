@@ -1,10 +1,11 @@
 package io.watchdog.pullrequest.repository;
 
+import io.watchdog.pullrequest.model.slack.SlackTeam;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Component;
-import io.watchdog.pullrequest.model.slack.SlackTeam;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author vladclaudiubulimac on 2019-03-03.
@@ -13,7 +14,7 @@ import java.util.List;
 @Component
 public interface TeamRepository extends MongoRepository<SlackTeam, String> {
 
-    SlackTeam findSlackTeamByChannelAndName(String channel, String name);
+    Optional<SlackTeam> findSlackTeamByChannelAndName(String channel, String name);
     List<SlackTeam> findSlackTeamsByChannel(String channel);
     List<SlackTeam> findAllByCheckingScheduleIsNotNull();
 
