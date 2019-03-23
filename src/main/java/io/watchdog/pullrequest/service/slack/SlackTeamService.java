@@ -4,6 +4,7 @@ import com.mongodb.MongoWriteException;
 import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
+import io.watchdog.pullrequest.exception.SlackTeamNotFoundException;
 import io.watchdog.pullrequest.model.CorrelatedUser;
 import io.watchdog.pullrequest.model.User;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
@@ -177,13 +178,16 @@ public class SlackTeamService {
             return teamService.deleteTeam(channel, teamName);
         } catch (IllegalArgumentException ex) {
             log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
+        } catch (SchedulerException ex) {
+            log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
         }
         return false;
     }
 
     public boolean unscheduleTeam(String channel, String teamName) {
         try{
-            SlackTeam slackTeam = teamService.getSpecificTeam(channel, teamName);
+            SlackTeam slackTeam = teamService.getSpecificTeam(channel, teamName)
+                    .orElseThrow(() -> new SlackTeamNotFoundException("Team " + teamName + " not found in channel " + channel));
             slackTeam.setCheckingSchedule(null);
             teamService.updateTeam(slackTeam);
         } catch (MongoWriteException ex) {
@@ -191,6 +195,9 @@ public class SlackTeamService {
             return false;
         } catch (SchedulerException ex) {
             log.error("Could not unschedule cronjob for team " + teamName + " in channel " + channel, ex);
+            return false;
+        } catch (SlackTeamNotFoundException ex) {
+            log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
             return false;
         } catch (Exception ex) {
             log.error("Unexpected error when tried to handle team " + teamName + " in channel " + channel, ex);

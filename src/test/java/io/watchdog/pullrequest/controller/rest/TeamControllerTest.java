@@ -112,7 +112,7 @@ public class TeamControllerTest {
         String teamName = "teamName";
         SlackTeam team = SlackTeam.builder().name(teamName).channel(channel).build();
 
-        when(teamService.getSpecificTeam(channel, teamName)).thenReturn(team);
+        when(teamService.getSpecificTeamOrNewTeam(channel, teamName)).thenReturn(team);
 
         mockMvc.perform(
                 get("/team/" + teamName + "/" + channel + "/")

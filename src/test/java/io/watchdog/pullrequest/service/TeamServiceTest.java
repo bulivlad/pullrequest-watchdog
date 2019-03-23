@@ -217,7 +217,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    public void deleteTeam() {
+    public void deleteTeam() throws SchedulerException {
         String channel = "channel";
         String teamName = "teamName";
 
@@ -239,7 +239,7 @@ public class TeamServiceTest {
 
         when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.empty());
 
-        SlackTeam result = teamService.getSpecificTeam(channel, teamName);
+        SlackTeam result = teamService.getSpecificTeamOrNewTeam(channel, teamName);
 
         assertThat(result, notNullValue());
         assertThat(result, equalTo(slackTeam));
@@ -256,7 +256,7 @@ public class TeamServiceTest {
 
         when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.of(slackTeam));
 
-        SlackTeam result = teamService.getSpecificTeam(channel, teamName);
+        SlackTeam result = teamService.getSpecificTeamOrNewTeam(channel, teamName);
 
         assertThat(result, notNullValue());
         assertThat(result, equalTo(slackTeam));

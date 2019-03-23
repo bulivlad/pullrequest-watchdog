@@ -20,10 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.quartz.SchedulerException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -287,7 +284,7 @@ public class SlackTeamServiceTest {
     }
 
     @Test
-    public void removeTeam() {
+    public void removeTeam() throws SchedulerException {
         String channel = "channel";
         String teamName = "teamName";
 
@@ -299,7 +296,7 @@ public class SlackTeamServiceTest {
     }
 
     @Test
-    public void removeTeamIllegalArgumentException() {
+    public void removeTeamIllegalArgumentException() throws SchedulerException {
         String channel = "channel";
         String teamName = "teamName";
 
@@ -320,7 +317,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(Optional.of(slackTeam));
         when(teamService.updateTeam(eq(slackTeam))).thenReturn(slackTeam);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);
@@ -338,7 +335,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(Optional.of(slackTeam));
         when(teamService.updateTeam(eq(slackTeam))).thenThrow(MongoWriteException.class);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);
@@ -356,7 +353,7 @@ public class SlackTeamServiceTest {
                 .checkingSchedule("0 20 11 1/1 * ? *")
                 .build();
 
-        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(slackTeam);
+        when(teamService.getSpecificTeam(eq(channel), eq(teamName))).thenReturn(Optional.of(slackTeam));
         when(teamService.updateTeam(eq(slackTeam))).thenThrow(SchedulerException.class);
 
         boolean result = slackTeamService.unscheduleTeam(channel, teamName);

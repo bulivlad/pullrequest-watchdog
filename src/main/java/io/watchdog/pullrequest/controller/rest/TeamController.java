@@ -45,7 +45,7 @@ public class TeamController {
     @GetMapping(path = "/{teamName}/{channelName}/",
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody SlackTeam getSpecificTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        return teamService.getSpecificTeam(channelName, teamName);
+        return teamService.getSpecificTeamOrNewTeam(channelName, teamName);
     }
 
     @PostMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -84,7 +84,7 @@ public class TeamController {
     @DeleteMapping(path = "/{teamName}/{channelName}/",
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity removeTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        teamService.deleteTeam(channelName, teamName);
+        slackTeamService.removeTeam(channelName, teamName);
         RestResponse response = RestResponse.builder().entityName(teamName).build();
         return ResponseEntity.ok(response);
     }

@@ -1,6 +1,7 @@
 package io.watchdog.pullrequest.bot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.watchdog.pullrequest.exception.WebSocketNotRespondingException;
 import io.watchdog.pullrequest.model.slack.MethodWrapper;
 import io.watchdog.pullrequest.model.slack.SlackEventMapping;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
@@ -25,6 +26,9 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -149,6 +153,24 @@ public abstract class Bot {
      */
     public void afterConnectionEstablished(WebSocketSession session) {
         log.debug("WebSocket connected: {}", session);
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleAtFixedRate(() -> pingMessage(session), 10, 10, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Send a ping message to slack rtm api to keep the connection active (keep-alive ping)
+     *
+     * @param session the {@link WebSocketSession} used to send the ping message
+     */
+    private void pingMessage(WebSocketSession session){
+        Message message = new Message();
+        message.setType("PING");
+        try {
+            session.sendMessage(new TextMessage(message.toJSONString()));
+            log.info("Keep-alive message was successful");
+        } catch (IOException e) {
+            throw new WebSocketNotRespondingException("Error pinging Slack. Slack bot may go offline when not active", e);
+        }
     }
 
     /**
