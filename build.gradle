@@ -34,11 +34,13 @@ jar {
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 	compile('org.springframework.boot:spring-boot-starter-validation')
+	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
 	compile('org.springframework.boot:spring-boot-starter-actuator')
 	compile('org.springframework.boot:spring-boot-starter-security')
 	compile('org.springframework.retry:spring-retry:1.2.4.RELEASE')
 	compile('org.springframework.boot:spring-boot-starter-log4j2')
 	compile('org.springframework.boot:spring-boot-starter-quartz')
+	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.reflections:reflections:0.9.11')
 	compile('com.google.guava:guava:27.0.1-jre')
 	compile('org.aspectj:aspectjweaver:1.9.2')

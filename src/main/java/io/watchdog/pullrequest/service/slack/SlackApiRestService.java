@@ -2,6 +2,7 @@ package io.watchdog.pullrequest.service.slack;
 
 import io.watchdog.pullrequest.config.AuthConfig;
 import io.watchdog.pullrequest.config.RepositoryConfig;
+import io.watchdog.pullrequest.dto.slack.SlackChannelDTO;
 import io.watchdog.pullrequest.dto.slack.SlackMessageRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackMessageResponseDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
@@ -47,6 +48,18 @@ public class SlackApiRestService {
                 buildHttpEntityWithAuthorisation(null),
                 SlackUserDTO.class,
                 slackUserId);
+        handleResponse(slackResponse);
+        return slackResponse.getBody();
+    }
+
+    public SlackChannelDTO retrieveSlackChannelDetails(String channelId) {
+        ResponseEntity<SlackChannelDTO> slackResponse = restTemplate.exchange(
+                authConfig.getSlack().getEndpoint() + SlackCommand.CONVERSATIONS_INFO.getValue() + "?channel={channelId}",
+                HttpMethod.GET,
+                buildHttpEntityWithAuthorisation(null),
+                SlackChannelDTO.class,
+                channelId
+        );
         handleResponse(slackResponse);
         return slackResponse.getBody();
     }
