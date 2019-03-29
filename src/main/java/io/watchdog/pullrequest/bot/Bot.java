@@ -167,7 +167,7 @@ public abstract class Bot {
         message.setType("PING");
         try {
             session.sendMessage(new TextMessage(message.toJSONString()));
-            log.info("Keep-alive message was successful");
+            log.debug("Keep-alive message was successful");
         } catch (IOException e) {
             throw new WebSocketNotRespondingException("Error pinging Slack. Slack bot may go offline when not active", e);
         }

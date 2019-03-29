@@ -1,5 +1,6 @@
 package io.watchdog.pullrequest.quartz;
 
+import com.google.common.collect.ImmutableMap;
 import io.watchdog.pullrequest.dto.slack.SlackMessageRequestDTO;
 import io.watchdog.pullrequest.model.CorrelatedUser;
 import io.watchdog.pullrequest.model.slack.MessageType;
@@ -40,13 +41,14 @@ public class PullRequestRetrieverJob implements Job {
         JobDataMap mergedJobDataMap = context.getJobDetail().getJobDataMap();
         mergedJobDataMap.getWrappedMap().forEach((key, value) -> log.debug("key '{}' and value '{}' ", key, value));
         List<CorrelatedUser> teamUsers = (List<CorrelatedUser>) mergedJobDataMap.getOrDefault("members", Collections.emptyList());
+        String repoSlug = (String) mergedJobDataMap.getOrDefault("slug", "");
 
-        List<String> messagesList = slackService.getSlackMessages(teamUsers);
+        List<String> messagesList = slackService.getSlackMessages(teamUsers, repoSlug);
 
         SlackMessageRequestDTO slackMessage = buildSlackRequestMessage(mergedJobDataMap, messagesList);
         log.debug("Sending message {} to slack", slackMessage);
 
-        slackApiRestService.sendMessageToChannel(slackMessage);
+        slackApiRestService.sendMessageToChannel(slackMessage, ImmutableMap.of("slug", repoSlug));
 
         log.info("cronjob for pull requests executed for team {} in channel {}",
                 mergedJobDataMap.getString("team"), mergedJobDataMap.getString("channel"));

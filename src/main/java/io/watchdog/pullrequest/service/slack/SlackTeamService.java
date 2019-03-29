@@ -39,8 +39,8 @@ import static io.watchdog.pullrequest.model.slack.SlackEventMapping.ADD_TEAM_EVE
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SlackTeamService {
-    private final static String START_SLACK_MESSAGE_TEMPLATE = "PRs waiting for reviewers today:\n";
-    private final static String NO_PR_SLACK_MESSAGE_TEMPLATE = ":woohoo: No PRs to be reviewed today !\n";
+    private final static String START_SLACK_MESSAGE_TEMPLATE = "PRs waiting for reviewers today for repo *%s*:\n";
+    private final static String NO_PR_SLACK_MESSAGE_TEMPLATE = ":woohoo: No PRs to be reviewed today for repo *%s* !\n";
     // {name} - {link} - {users}
     private final static String BODY_SLACK_MESSAGE_TEMPLATE = "%s - %s - %s";
 
@@ -82,16 +82,16 @@ public class SlackTeamService {
         return true;
     }
 
-    public List<String> getSlackMessages(List<CorrelatedUser> reviewers) {
+    public List<String> getSlackMessages(List<CorrelatedUser> reviewers, String repoSlug) {
         List<String> reviewersUsername = reviewers.stream()
                 .map(CorrelatedUser::getBitbucketUser)
                 .map(User::getUsername)
                 .collect(Collectors.toList());
-        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewersUsername);
+        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewersUsername, repoSlug);
 
         log.debug(unapprovedPRs.toString());
 
-        List<String> messages = buildSlackMessagesString(unapprovedPRs.stream(), reviewers);
+        List<String> messages = buildSlackMessagesString(unapprovedPRs.stream(), reviewers, repoSlug);
         log.debug(messages.toString());
 
         return messages;
@@ -109,11 +109,12 @@ public class SlackTeamService {
                 .members(users)
                 .name(slackTeamDTO.getTeamName())
                 .checkingSchedule(slackTeamDTO.getScheduler())
+                .slug(slackTeamDTO.getSlug())
                 .build();
     }
 
-    //add team rdc2-team with members [@vbulimac, @nbuhosu] and scheduler 0 20 11 1/1 * ? *
-    //(add team).*(members\s\[).*(\]).*(and\sscheduler ).*
+    //add team rdc2-team for repository development with members [@vbulimac, @nbuhosu] and scheduler 0 20 11 1/1 * ? *
+    //(add team).*(repository\s)(?<repository>[a-zA-Z0-9]).*(members\s\[).*(\]).*(and\sscheduler ).*
 
     private SlackTeamDTO buildSlackTeamDTO(Event event) {
         String text = event.getText();
@@ -124,6 +125,7 @@ public class SlackTeamService {
         slackTeamDTO.setTeamName(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "teamName").orElse("").trim());
         slackTeamDTO.setMembers(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "members").orElse("").trim().split(","));
         slackTeamDTO.setScheduler(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "schedulerExpression").orElse(""));
+        slackTeamDTO.setSlug(BotUtil.getGroupMatcherFromEventMessage(event.getText(), ADD_TEAM_EVENT_REGEX.getValue(), "repository").orElse(""));
         log.debug("Got messages team name '{}' members '{}' scheduler '{}'", slackTeamDTO.getTeamName(),
                 slackTeamDTO.getMembers(),
                 slackTeamDTO.getScheduler());
@@ -131,7 +133,7 @@ public class SlackTeamService {
         return slackTeamDTO;
     }
 
-    private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs, List<CorrelatedUser> bitbucketUserDTOs){
+    private List<String> buildSlackMessagesString(Stream<PullRequestDTO> unapprovedPRs, List<CorrelatedUser> bitbucketUserDTOs, String repoSlug){
         List<String> messages = new ArrayList<>();
 
         unapprovedPRs.filter(pullRequestDTO -> !CollectionUtils.isEmpty(pullRequestDTO.getReviewers()))
@@ -142,12 +144,12 @@ public class SlackTeamService {
                     messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
                 });
 
-        messages.add(0, getMessageHeader(messages));
+        messages.add(0, getMessageHeader(repoSlug, messages));
         return messages;
     }
 
-    private String getMessageHeader(List<String> messages) {
-        return messages.isEmpty() ? NO_PR_SLACK_MESSAGE_TEMPLATE : START_SLACK_MESSAGE_TEMPLATE;
+    private String getMessageHeader(String repoSlug, List<String> messages) {
+        return String.format(messages.isEmpty() ? NO_PR_SLACK_MESSAGE_TEMPLATE : START_SLACK_MESSAGE_TEMPLATE, repoSlug);
     }
 
     private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerUsername){
@@ -173,9 +175,9 @@ public class SlackTeamService {
         return new CorrelatedUser(slackUser);
     }
 
-    public boolean removeTeam(String channel, String teamName) {
+    public boolean removeTeam(String channel, String teamName, String repoSlug) {
         try {
-            return teamService.deleteTeam(channel, teamName);
+            return teamService.deleteTeam(channel, teamName, repoSlug);
         } catch (IllegalArgumentException ex) {
             log.warn("Team '" + teamName + "' in channel '" + channel + "' could not be found!", ex);
         } catch (SchedulerException ex) {
@@ -184,9 +186,9 @@ public class SlackTeamService {
         return false;
     }
 
-    public boolean unscheduleTeam(String channel, String teamName) {
+    public boolean unscheduleTeam(String channel, String teamName, String slug) {
         try{
-            SlackTeam slackTeam = teamService.getSpecificTeam(channel, teamName)
+            SlackTeam slackTeam = teamService.getSpecificTeamInRepo(channel, teamName, slug)
                     .orElseThrow(() -> new SlackTeamNotFoundException("Team " + teamName + " not found in channel " + channel));
             slackTeam.setCheckingSchedule(null);
             teamService.updateTeam(slackTeam);

@@ -237,16 +237,17 @@ public class TeamControllerTest {
     public void unscheduleTeam() throws Exception {
         String channel = "channel";
         String teamName = "teamName";
+        String slug = "dummy-slug";
         SlackTeam team = SlackTeam.builder().name(teamName).channel(channel).build();
         RestResponse response = RestResponse.builder()
                 .entityName(team.getName())
                 .scheduled(true)
                 .build();
 
-        when(slackTeamService.unscheduleTeam(eq(channel), eq(teamName))).thenReturn(true);
+        when(slackTeamService.unscheduleTeam(eq(channel), eq(teamName), eq(slug))).thenReturn(true);
 
         mockMvc.perform(
-                put("/team/" + teamName + "/" + channel + "/unschedule/")
+                put("/team/" + teamName + "/" + channel + "/" + slug + "/unschedule/")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -258,16 +259,17 @@ public class TeamControllerTest {
     public void unscheduleTeamFailure() throws Exception {
         String channel = "channel";
         String teamName = "teamName";
+        String slug = "dummy-slug";
         SlackTeam team = SlackTeam.builder().name(teamName).channel(channel).build();
         RestResponse response = RestResponse.builder()
                 .entityName(team.getName())
                 .scheduled(false)
                 .build();
 
-        when(slackTeamService.unscheduleTeam(eq(channel), eq(teamName))).thenReturn(false);
+        when(slackTeamService.unscheduleTeam(eq(channel), eq(teamName), eq(slug))).thenReturn(false);
 
         mockMvc.perform(
-                put("/team/" + teamName + "/" + channel + "/unschedule/")
+                put("/team/" + teamName + "/" +  channel + "/" + slug + "/unschedule/")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -288,13 +290,14 @@ public class TeamControllerTest {
     public void removeTeam() throws Exception {
         String channel = "channel";
         String teamName = "teamName";
+        String slug = "dummy-slug";
         SlackTeam team = SlackTeam.builder().name(teamName).channel(channel).build();
         RestResponse response = RestResponse.builder().entityName(team.getName()).build();
 
-        when(teamService.deleteTeam(eq(channel), eq(teamName))).thenReturn(true);
+        when(teamService.deleteTeam(eq(channel), eq(teamName), eq(slug))).thenReturn(true);
 
         mockMvc.perform(
-                delete("/team/" + teamName + "/" + channel + "/")
+                delete("/team/" + teamName + "/" + channel + "/" + slug + "/")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

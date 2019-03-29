@@ -52,14 +52,17 @@ public class DirectMentionController {
         String teamName = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
                 SlackEventMapping.REMOVE_TEAM_EVENT_REGEX.getValue(),
                 "teamName").orElseThrow(IllegalArgumentException::new);
+        String repoSlug = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
+                SlackEventMapping.REMOVE_TEAM_EVENT_REGEX.getValue(),
+                "repository").orElseThrow(IllegalArgumentException::new);
 
-        boolean removed = slackTeamService.removeTeam(channel, teamName);
+        boolean removed = slackTeamService.removeTeam(channel, teamName, repoSlug);
         if(!removed) {
             slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
                     + "> , team could not be removed!"));
             return;
         }
-        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , team " + teamName +" removed!"));
+        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , team *" + teamName + "* for repository *" + repoSlug +"* removed!"));
     }
 
     @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX)
@@ -68,8 +71,11 @@ public class DirectMentionController {
         String teamName = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
                 SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX.getValue(),
                 "teamName").orElseThrow(IllegalArgumentException::new);
+        String repoSlug = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
+                SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX.getValue(),
+                "repository").orElseThrow(IllegalArgumentException::new);
 
-        boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName);
+        boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName, repoSlug);
         if (!unscheduled) {
             slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
                     + "> , team could not be unscheduled!"));
