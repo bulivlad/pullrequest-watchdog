@@ -175,7 +175,7 @@ public class SlackTeamService {
                 .getMention();
     }
 
-    private CorrelatedUser buildCorrelatedUser(String slackUserId){
+    public CorrelatedUser buildCorrelatedUser(String slackUserId){
         SlackUserDTO slackUserDTO = slackApiRestService.retrieveSlackUserDetails(slackUserId);
         SlackUser slackUser = SlackUser.builder()
                 .name(slackUserDTO.getUserRealName())
@@ -218,5 +218,16 @@ public class SlackTeamService {
             return false;
         }
         return true;
+    }
+
+    public SlackTeam convertSlackTeamDtoToSlackTeam(SlackTeamDTO slackTeamDTO) {
+        List<CorrelatedUser> users = Stream.of(slackTeamDTO.getMembers())
+                .map(this::buildCorrelatedUser)
+                .collect(Collectors.toList());
+        return SlackTeam.builder().name(slackTeamDTO.getTeamName())
+                .channel(slackTeamDTO.getChannel())
+                .checkingSchedule(slackTeamDTO.getScheduler())
+                .members(users)
+                .build();
     }
 }
