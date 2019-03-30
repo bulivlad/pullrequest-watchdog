@@ -18,7 +18,7 @@ import java.util.List;
 @Document
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@CompoundIndex(name = "channel_name_uniqe", unique = true, def = "{'name' : 1, 'channel' : 1}")
+@CompoundIndex(name = "channel_name_slug_uniqe", unique = true, def = "{'name' : 1, 'channel' : 1, 'slug' : 1}")
 public class SlackTeam {
 
     @Id
@@ -32,5 +32,6 @@ public class SlackTeam {
     String name;
     @Builder.Default
     boolean tagMembers = true;
+    String slug;
 
 }

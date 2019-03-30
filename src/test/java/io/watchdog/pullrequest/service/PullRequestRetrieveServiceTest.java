@@ -117,7 +117,7 @@ public class PullRequestRetrieveServiceTest {
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOSinglePR());
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(buildPullRequestDTOOneReviewer());
 
-        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers);
+        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers, "dummy-slug");
 
         assertThat(unapprovedPRs, notNullValue());
         assertThat(unapprovedPRs.size(), equalTo(1));
@@ -144,7 +144,7 @@ public class PullRequestRetrieveServiceTest {
         PullRequestDTO prId3 = buildPullRequestDTOMultipleReviewers(3L, "origin/source-branch-3");
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(3L))).thenReturn(prId3);
 
-        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers);
+        List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers, "dummy-slug");
 
         assertThat(unapprovedPRs, notNullValue());
         assertThat(unapprovedPRs.size(), equalTo(3));

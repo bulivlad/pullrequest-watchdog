@@ -40,15 +40,16 @@ public class QuartzService {
     }
 
     private void scheduleJobAndLog(SlackTeam slackTeam)  {
-        log.debug("Scheduling the job for team '{}' in channel '{}' with cron expression '{}'",
+        log.debug("Scheduling the job for team '{}' for slug '{}' in channel '{}' with cron expression '{}'",
                 slackTeam.getName(),
+                slackTeam.getSlug(),
                 slackTeam.getChannel(),
                 slackTeam.getCheckingSchedule());
         boolean scheduled = false;
         try {
             scheduled = schedulerService.scheduleEventForTeam(slackTeam);
         } catch (SchedulerException ex){
-            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), ex);
+            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel() + "and slug " + slackTeam.getSlug(), ex);
         }
         log.debug("Scheduled {}", scheduled);
     }

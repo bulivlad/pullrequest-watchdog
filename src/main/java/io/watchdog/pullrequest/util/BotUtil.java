@@ -11,7 +11,7 @@ public class BotUtil {
 
     public static Optional<String> getGroupMatcherFromEventMessage(String message, String pattern, String groupName) {
         Matcher matcher = Pattern.compile(pattern).matcher(message);
-        if(matcher.find()) {
+        if(matcher.find() && matcher.group(groupName) != null) {
             return Optional.of(matcher.group(groupName).trim());
         }
         return Optional.empty();

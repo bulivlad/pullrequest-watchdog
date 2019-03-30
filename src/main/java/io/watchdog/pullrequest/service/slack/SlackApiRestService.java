@@ -2,10 +2,10 @@ package io.watchdog.pullrequest.service.slack;
 
 import io.watchdog.pullrequest.config.AuthConfig;
 import io.watchdog.pullrequest.config.RepositoryConfig;
-import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
-import io.watchdog.pullrequest.model.slack.SlackCommand;
 import io.watchdog.pullrequest.dto.slack.SlackMessageRequestDTO;
 import io.watchdog.pullrequest.dto.slack.SlackMessageResponseDTO;
+import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
+import io.watchdog.pullrequest.model.slack.SlackCommand;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 /**
  * @author vladclaudiubulimac on 2019-03-06.
@@ -34,8 +36,8 @@ public class SlackApiRestService {
         this.restTemplate = new RestTemplate();
     }
 
-    public void sendMessageToChannel(SlackMessageRequestDTO message) {
-        sendSlackCommand(message, SlackCommand.MESSAGE_CHANNEL);
+    public void sendMessageToChannel(SlackMessageRequestDTO message, Map<String, Object> context) {
+        sendSlackCommand(message, SlackCommand.MESSAGE_CHANNEL, context);
     }
 
     public SlackUserDTO retrieveSlackUserDetails(String slackUserId){
@@ -49,14 +51,14 @@ public class SlackApiRestService {
         return slackResponse.getBody();
     }
 
-    private SlackMessageResponseDTO sendSlackCommand(SlackMessageRequestDTO message, SlackCommand slackCommand){
+    private SlackMessageResponseDTO sendSlackCommand(SlackMessageRequestDTO message, SlackCommand slackCommand, Map<String, Object> context){
         ResponseEntity<SlackMessageResponseDTO> slackResponse = restTemplate.exchange(
                 authConfig.getSlack().getEndpoint() + slackCommand.getValue(),
                 HttpMethod.POST,
                 buildHttpEntityWithAuthorisation(message),
                 SlackMessageResponseDTO.class,
                 repositoryConfig.getUsername(),
-                repositoryConfig.getSlug());
+                context.getOrDefault("slug", repositoryConfig.getSlug()));
         handleResponse(slackResponse);
         return slackResponse.getBody();
     }
