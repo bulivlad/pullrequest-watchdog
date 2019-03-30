@@ -39,7 +39,7 @@ public class DirectMentionController {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
         boolean saved = slackTeamService.saveTeam(slackTeam);
         if (!saved) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team is already existing or it was already scheduled!"));
             return;
         }
@@ -58,7 +58,7 @@ public class DirectMentionController {
 
         boolean removed = slackTeamService.removeTeam(channel, teamName, repoSlug);
         if(!removed) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team could not be removed!"));
             return;
         }
@@ -77,7 +77,7 @@ public class DirectMentionController {
 
         boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName, repoSlug);
         if (!unscheduled) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team could not be unscheduled!"));
             return;
         }
