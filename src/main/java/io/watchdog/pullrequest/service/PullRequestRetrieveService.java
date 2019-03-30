@@ -1,5 +1,6 @@
 package io.watchdog.pullrequest.service;
 
+import com.mchange.v2.lang.StringUtils;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +84,7 @@ public class PullRequestRetrieveService {
                     repositoryConfig.getEndpoint() + queryString,
                     PaginatedPullRequestDTO.class,
                     repositoryConfig.getUsername(),
-                    repoSlug);
+                    getRepoSlug(repoSlug));
             log.info("Open PR's retrieved for {}", reviewers);
             return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
         } catch (RestClientException ex) {
@@ -99,12 +100,12 @@ public class PullRequestRetrieveService {
                     repositoryConfig.getEndpoint() + "/{pullRequestId}",
                     PullRequestDTO.class,
                     repositoryConfig.getUsername(),
-                    repoSlug,
+                    getRepoSlug(repoSlug),
                     pullRequestId);
             pullRequest.setLink(String.format(
                     repositoryConfig.getPullRequestsUrl(),
                     repositoryConfig.getUsername(),
-                    repoSlug,
+                    getRepoSlug(repoSlug),
                     pullRequestId));
             return Optional.of(pullRequest);
         } catch (RestClientException ex) {
@@ -132,5 +133,9 @@ public class PullRequestRetrieveService {
         stringBuilder.append("reviewers.username=\"");
         stringBuilder.append(reviewer);
         stringBuilder.append("\" OR ");
+    }
+
+    private String getRepoSlug(String repoSlug) {
+        return StringUtils.nonEmptyString(repoSlug) ? repoSlug : repositoryConfig.getSlug();
     }
 }
