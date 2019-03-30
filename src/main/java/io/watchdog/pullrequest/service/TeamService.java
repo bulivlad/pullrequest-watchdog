@@ -10,11 +10,13 @@ import io.watchdog.pullrequest.quartz.SchedulerService;
 import io.watchdog.pullrequest.repository.TeamRepository;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +26,7 @@ import java.util.Optional;
  * @author vladclaudiubulimac on 2019-03-03.
  */
 
+@Slf4j
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TeamService {
@@ -111,7 +114,16 @@ public class TeamService {
     }
 
     private BitbucketUser buildBitbucketUsersForTeam(SlackUser slackUser) {
-        return convertBitbucketDtoToBitbucketUser(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(slackUser.getEmail()));
+        return convertBitbucketDtoToBitbucketUser(fetchBitbucketUserWrapper(slackUser.getEmail()));
+    }
+
+    private BitbucketUserDTO fetchBitbucketUserWrapper(String email){
+        try {
+            return bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(email);
+        } catch (RestClientException ex) {
+            log.error("Exception on retrieving user info for " + email, ex);
+            return new BitbucketUserDTO();
+        }
     }
 
     private BitbucketUser convertBitbucketDtoToBitbucketUser(BitbucketUserDTO bitbucketUserDTO){
