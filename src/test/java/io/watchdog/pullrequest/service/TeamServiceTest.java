@@ -187,7 +187,6 @@ public class TeamServiceTest {
         String teamName = "teamName";
         SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.empty());
         when(schedulerService.rescheduleEventForTeam(eq(slackTeam))).thenReturn(true);
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(eq("bbusername@example.com"))).thenReturn(bitbucketUserDTO);
         when(teamRepository.save(eq(slackTeam))).thenReturn(slackTeam);
@@ -215,10 +214,11 @@ public class TeamServiceTest {
 
         String channel = "channel";
         String teamName = "teamName";
-        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
+        String slug = "dummy-slug";
+        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).slug("dummy-slug").build();
         SlackTeam existentSlackTeam = SlackTeam.builder().id("1").channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.of(existentSlackTeam));
+        when(teamRepository.findSlackTeamByChannelAndNameAndSlug(eq(channel), eq(teamName), eq(slug))).thenReturn(Optional.of(existentSlackTeam));
         when(schedulerService.rescheduleEventForTeam(eq(slackTeam))).thenReturn(true);
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(eq("bbusername@example.com"))).thenReturn(bitbucketUserDTO);
         when(teamRepository.save(eq(slackTeam))).thenReturn(slackTeam);
@@ -242,7 +242,7 @@ public class TeamServiceTest {
         SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
         SlackTeam existentSlackTeam = SlackTeam.builder().id("1").channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.of(existentSlackTeam));
+        when(teamRepository.findSlackTeamByChannelAndNameAndSlug(eq(channel), eq(teamName), eq(null))).thenReturn(Optional.of(existentSlackTeam));
         doThrow(SchedulerException.class).when(schedulerService).rescheduleEventForTeam(eq(slackTeam));
 
         teamService.updateTeam(slackTeam);

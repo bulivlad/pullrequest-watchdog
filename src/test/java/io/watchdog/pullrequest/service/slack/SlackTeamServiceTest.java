@@ -144,13 +144,13 @@ public class SlackTeamServiceTest {
         List<PullRequestDTO> pullRequestDTOS = Arrays.asList(pullRequestDTO, pullRequestDTO1);
 
         List<String> expected = new ArrayList<>();
-        expected.add("PRs waiting for reviewers today:\n");
+        expected.add("PRs waiting for reviewers today for repo *dummy-slug*:\n");
         expected.add("sourceBranch1 - http://pr1 - <@bbusernamemention> <@bbusernamemention1> ");
         expected.add("sourceBranch2 - http://pr2 - <@bbusernamemention1> ");
 
         when(pullRequestRetrieveService.getUnapprovedPRs(anyList(), anyString())).thenReturn(pullRequestDTOS);
 
-        List<String> result = slackTeamService.getSlackMessages(correlatedUsers, "development");
+        List<String> result = slackTeamService.getSlackMessages(correlatedUsers, "dummy-slug");
 
         assertThat(result, equalTo(expected));
     }
@@ -178,11 +178,11 @@ public class SlackTeamServiceTest {
         List<CorrelatedUser> correlatedUsers = Arrays.asList(correlatedUser, correlatedUser1);
 
         List<String> expected = new ArrayList<>();
-        expected.add(":woohoo: No PRs to be reviewed today !\n");
+        expected.add(":woohoo: No PRs to be reviewed today for repo *dummy-slug* !\n");
 
         when(pullRequestRetrieveService.getUnapprovedPRs(anyList(), anyString())).thenReturn(Collections.emptyList());
 
-        List<String> result = slackTeamService.getSlackMessages(correlatedUsers, "development");
+        List<String> result = slackTeamService.getSlackMessages(correlatedUsers, "dummy-slug");
 
         assertThat(result, equalTo(expected));
     }

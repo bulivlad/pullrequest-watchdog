@@ -1,17 +1,13 @@
 package io.watchdog.pullrequest.util;
 
 import io.watchdog.pullrequest.model.slack.SlackEventMapping;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
 
-import static io.watchdog.pullrequest.model.slack.SlackEventMapping.ADD_TEAM_EVENT_REGEX;
-import static io.watchdog.pullrequest.model.slack.SlackEventMapping.REMOVE_TEAM_EVENT_REGEX;
-import static io.watchdog.pullrequest.model.slack.SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX;
+import static io.watchdog.pullrequest.model.slack.SlackEventMapping.*;
 import static io.watchdog.pullrequest.util.BotUtil.getGroupMatcherFromEventMessage;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -48,7 +44,7 @@ public class BotUtilTest {
 
     @Test
     public void getGroupMatcherForRemoveTeamEvent() {
-        String message = "@bot REMOve team dummy-team";
+        String message = "@bot REMOve team dummy-team for repository dummy-slug";
 
         Optional<String> teamName = getGroupMatcherFromEventMessage(message, REMOVE_TEAM_EVENT_REGEX.getValue(), "teamName");
 
@@ -59,7 +55,7 @@ public class BotUtilTest {
 
     @Test
     public void getGroupMatcherForUnscheduleTeamEvent() {
-        String message = "@bot UNSChedule team dummy-team";
+        String message = "@bot UNSChedule team dummy-team for repository dummy-slug";
 
         Optional<String> teamName = getGroupMatcherFromEventMessage(message, UNSCHEDULE_TEAM_EVENT_REGEX.getValue(), "teamName");
 
@@ -70,7 +66,7 @@ public class BotUtilTest {
 
     @Test
     public void getGroupMatcherForUnknownEvent() {
-        String message = "@bot UNSChedule my team dummy-team";
+        String message = "@bot UNSChedule my team dummy-team for repository dummy-slug";
 
         Optional<String> teamName = getGroupMatcherFromEventMessage(message, SlackEventMapping.HEALTH_CHECK_MESSAGE_REGEX.getValue(), "teamName");
 
