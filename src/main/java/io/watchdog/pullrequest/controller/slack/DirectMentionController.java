@@ -84,9 +84,16 @@ public class DirectMentionController {
         slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Unscheduled " + unscheduled + "!"));
     }
 
-    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.DEFAULT)
-    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
-        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about"));
+    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.HELP_REGEX)
+    public void onReceiveHelpMention(WebSocketSession session, Event event) {
+        slackBot.reply(session, event, new Message(":muscle: I'm here to help! Try something like: "));
+        slackBot.reply(session, event, new Message("add team {team name} for repository {repository} with members [{@member1}, {@member2}, .. {@member n}] and scheduler {cron expression}"));
+        slackBot.reply(session, event, new Message("remove team {team name} for repository {repository}"));
+        slackBot.reply(session, event, new Message("unschedule team {team name} for repository {repository}"));
     }
 
+    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.DEFAULT)
+    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about. Try _@username_ help"));
+    }
 }
