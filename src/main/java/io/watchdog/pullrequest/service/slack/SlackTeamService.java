@@ -2,11 +2,13 @@ package io.watchdog.pullrequest.service.slack;
 
 import com.mongodb.MongoWriteException;
 import io.watchdog.pullrequest.dto.PullRequestDTO;
+import io.watchdog.pullrequest.dto.slack.SlackChannelDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
 import io.watchdog.pullrequest.exception.SlackTeamNotFoundException;
 import io.watchdog.pullrequest.model.CorrelatedUser;
 import io.watchdog.pullrequest.model.User;
+import io.watchdog.pullrequest.model.slack.SlackChannel;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.service.PullRequestRetrieveService;
@@ -26,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,24 +50,33 @@ public class SlackTeamService {
     TeamService teamService;
     PullRequestRetrieveService pullRequestRetrieveService;
     SlackApiRestService slackApiRestService;
+    SlackChannelService slackChannelService;
 
     @Autowired
     public SlackTeamService(TeamService teamService,
                             PullRequestRetrieveService pullRequestRetrieveService,
-                            SlackApiRestService slackApiRestService) {
+                            SlackApiRestService slackApiRestService,
+                            SlackChannelService slackChannelService) {
         this.teamService = teamService;
         this.pullRequestRetrieveService = pullRequestRetrieveService;
         this.slackApiRestService = slackApiRestService;
+        this.slackChannelService = slackChannelService;
     }
 
     public boolean saveTeam(SlackTeam slackTeam) {
+        String channelId = slackTeam.getChannel();
         try{
+            Optional<SlackChannel> maybeChannel = slackChannelService.findChannelByIdOrName(channelId, channelId);
+            if(!maybeChannel.isPresent()){
+                SlackChannelDTO slackChannelDTO = slackApiRestService.retrieveSlackChannelDetails(channelId);
+                slackChannelService.saveChannel(slackChannelService.convertSlackChannelDtoToSlackChannel(slackChannelDTO));
+            }
             teamService.saveTeam(slackTeam);
         } catch (MongoWriteException | DuplicateKeyException ex){
-            log.warn("Team '{}' in channel {} is already existing in the database!", slackTeam.getName(), slackTeam.getChannel());
+            log.warn("Team '{}' in channel {} is already existing in the database!", slackTeam.getName(), channelId);
             return false;
         } catch (SchedulerException ex) {
-            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + slackTeam.getChannel(), ex);
+            log.error("Could not schedule cronjob for team " + slackTeam.getName() + " in channel " + channelId, ex);
             return false;
         }
 
@@ -163,7 +175,7 @@ public class SlackTeamService {
                 .getMention();
     }
 
-    private CorrelatedUser buildCorrelatedUser(String slackUserId){
+    public CorrelatedUser buildCorrelatedUser(String slackUserId){
         SlackUserDTO slackUserDTO = slackApiRestService.retrieveSlackUserDetails(slackUserId);
         SlackUser slackUser = SlackUser.builder()
                 .name(slackUserDTO.getUserRealName())
@@ -206,5 +218,16 @@ public class SlackTeamService {
             return false;
         }
         return true;
+    }
+
+    public SlackTeam convertSlackTeamDtoToSlackTeam(SlackTeamDTO slackTeamDTO) {
+        List<CorrelatedUser> users = Stream.of(slackTeamDTO.getMembers())
+                .map(this::buildCorrelatedUser)
+                .collect(Collectors.toList());
+        return SlackTeam.builder().name(slackTeamDTO.getTeamName())
+                .channel(slackTeamDTO.getChannel())
+                .checkingSchedule(slackTeamDTO.getScheduler())
+                .members(users)
+                .build();
     }
 }

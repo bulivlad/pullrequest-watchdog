@@ -129,5 +129,4 @@ public class TeamService {
     private BitbucketUser convertBitbucketDtoToBitbucketUser(BitbucketUserDTO bitbucketUserDTO){
         return BitbucketUser.builder().name(bitbucketUserDTO.getDisplayName()).username(bitbucketUserDTO.getUsername()).build();
     }
-
 }

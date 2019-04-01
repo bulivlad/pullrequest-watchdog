@@ -9,6 +9,7 @@ import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -84,6 +85,7 @@ public class SchedulerService {
                 .withDescription("Retrieve Pull Requests trigger")
                 .withSchedule(CronScheduleBuilder.cronSchedule(slackTeam.getCheckingSchedule())
                         .withMisfireHandlingInstructionFireAndProceed()
+                        .inTimeZone(TimeZone.getTimeZone("UTC"))
                         .build()
                         .getScheduleBuilder())
                 .build();
