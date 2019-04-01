@@ -7,12 +7,15 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-    <title>Title</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <link rel="icon" type="image/png" href="/img/watchdog.jpg">
+    <script src="/js/sorter.js"></script>
+    <title>Pull Requests Watchdog</title>
 </head>
 <body class="pt-5">
 <nav class="navbar fixed-top navbar-light bg-light">
     <a class="navbar-brand" href="#">
-        <img src="../static/img/watchdog.jpg" width="40" height="40" class="d-inline-block align-top" alt="">
+        <img src="/img/watchdog.jpg" width="40" height="40" class="d-inline-block align-top" alt="">
         Pull Requests watchdog
     </a>
 </nav>
@@ -22,110 +25,15 @@
         <a class="nav-link active" data-toggle="tab" href="#nav-view" role="tab">View</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" href="#nav-add" role="tab">Add</a>
+        <a class="nav-link disabled" data-toggle="tab" href="#" onclick="alert('Not available yet')" role="tab">Add</a>
     </li>
 </ul>
 
 <div class="tab-content" id="nav-tabContent">
-    <div class="tab-pane fade show active" id="nav-view" role="tabpanel" aria-labelledby="nav-home-tab">
-        <input id="myInput" type="text" placeholder="Search..">
-        <table id="team-table" class="table table-striped my-2 my-lg-5" cellspacing="0" width="50%">
-            <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Name</th>
-                <th scope="col">Channel</th>
-                <th scope="col">Members - slack</th>
-                <th scope="col">Members - bitbucket</th>
-                <th scope="col">Schedule</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="team,iter : ${teams}">
-                <th scope="row" th:text="${iter.index + 1}"></th>
-                <td th:text="${team.name}" class="text-nowrap"></td>
-                <td th:text="${team.channel}"></td>
-                <td>
-                    <span th:each="user : ${team.members}" th:text="${user.slackUser.username == null ? '-' : user.slackUser.username + ', '}"></span>
-                </td>
-                <td>
-                    <span th:each="user : ${team.members}" th:text="${(user.bitbucketUser.username == null ? '-' : user.bitbucketUser.username + ', ')}"></span>
-                </td>
-                <td th:text="${team.checkingSchedule == '' ? '-' : team.checkingSchedule}" class="text-nowrap"></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="tab-pane fade hide active" id="nav-add" role="tabpanel" aria-labelledby="nav-home-tab">
-        <div class="wrapper">
-            <form action="#" method="POST" th:object="${slackTeam}" th:action="@{/add}">
-                <div class="row">
-                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
-                        <input type="text" class="form-control" name="teamName" required placeholder="Team name">
-                    </div>
-                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
-                        <label class="sr-only" for="inlineChannel">Channel</label>
-                        <div class="input-group mb-2">
-                            <div class="input-group-prepend">
-                                <div class="input-group-text">#</div>
-                            </div>
-                            <input type="text" class="form-control" name="channel" required id="inlineChannel" placeholder="Channel">
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
-                        <input type="text" class="form-control" name="scheduler" placeholder="Schedule">
-                    </div>
-                </div>
-                <div class="row pt-5" id="members-area">
-                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
-                        <label class="sr-only" for="inlineMember">Member</label>
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <div class="input-group-text">@</div>
-                            </div>
-                            <input type="text" class="form-control" name="members[0]" required id="inlineMember" placeholder="Member">
-                            <div class="input-group-append">
-                                <button id="add-member" class="btn btn-success" type="button">Add</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-12 text-center">
-                    <button id="submit" class="btn btn-success" type="submit">Submit</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div th:replace="fragments/tabs :: view-tab">&nbsp;</div>
+    <div th:replace="fragments/tabs :: add-tab">&nbsp;</div>
 </div>
-
-<script type="text/javascript">
-    $(document).ready(function(){
-        $("#myInput").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $("#team-table tbody tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
-        var next = 0;
-        $("#add-member").click(function(e){
-            e.preventDefault();
-            var addto = "#members-area";
-            var newIn = '<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4" id="remove-me-'+ next +'"><label class="sr-only" for="inlineMember' +  next + '">Member</label><div class="input-group mb-3"><div class="input-group-prepend"><div class="input-group-text">@</div></div><input type="text" class="form-control" required id="inlineMember' +  next + '" name="members['+ next + ']"placeholder="Member"><div class="input-group-append"><button id="remove' + next + '" class="remove-member btn btn-danger" type="button">Remove</button></div></div></div>';
-            var newInput = $(newIn);
-            next = next + 1;
-            $(addto).append(newInput);
-            $("#field" + next).attr('data-source',$(addto).attr('data-source'));
-            $("#count").val(next);
-
-            $('.remove-member').click(function(e){
-                e.preventDefault();
-                var fieldNum = this.id.substring("remove".length);
-                var fieldID = "#remove-me-" + fieldNum;
-                $(this).remove();
-                $(fieldID).remove();
-            });
-        });
-    });
-</script>
+<script src="/js/add-tab.js"></script>
+<script src="/js/view-tab.js"></script>
 </body>
 </html>

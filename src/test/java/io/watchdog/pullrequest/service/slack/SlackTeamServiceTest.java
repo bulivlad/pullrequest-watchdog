@@ -4,9 +4,11 @@ import com.mongodb.MongoWriteException;
 import io.watchdog.pullrequest.config.RepositoryConfig;
 import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.ReviewerDTO;
+import io.watchdog.pullrequest.dto.slack.SlackChannelDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
 import io.watchdog.pullrequest.model.BitbucketUser;
 import io.watchdog.pullrequest.model.CorrelatedUser;
+import io.watchdog.pullrequest.model.slack.SlackChannel;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
 import io.watchdog.pullrequest.service.PullRequestRetrieveService;
@@ -28,6 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,15 +49,20 @@ public class SlackTeamServiceTest {
     SlackApiRestService slackApiRestService;
     @Mock
     RepositoryConfig repositoryConfig;
+    @Mock
+    SlackChannelService slackChannelService;
 
     @InjectMocks
     SlackTeamService slackTeamService;
 
     @Test
     public void saveTeam() throws SchedulerException {
-        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel("channel").build();
+        String channelId = "channel";
+        SlackChannel slackChannel = new SlackChannel("channel", "dummy-channel-name", Collections.emptyList());
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
 
         when(teamService.saveTeam(eq(slackTeam))).thenReturn(slackTeam);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.of(slackChannel));
 
         boolean result = slackTeamService.saveTeam(slackTeam);
 
@@ -62,10 +70,32 @@ public class SlackTeamServiceTest {
     }
 
     @Test
+    public void saveTeamNoChannelFound() throws SchedulerException {
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannelDTO slackChannelDTO = new SlackChannelDTO();
+        SlackChannel slackChannel = new SlackChannel("channel", "dummy-channel-name", Collections.emptyList());
+
+        when(teamService.saveTeam(eq(slackTeam))).thenReturn(slackTeam);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.empty());
+        when(slackApiRestService.retrieveSlackChannelDetails(eq(channelId))).thenReturn(slackChannelDTO);
+        when(slackChannelService.convertSlackChannelDtoToSlackChannel(eq(slackChannelDTO))).thenReturn(slackChannel);
+
+        boolean result = slackTeamService.saveTeam(slackTeam);
+
+        assertThat(result, is(true));
+        verify(slackApiRestService).retrieveSlackChannelDetails(channelId);
+        verify(slackChannelService).convertSlackChannelDtoToSlackChannel(slackChannelDTO);
+    }
+
+    @Test
     public void saveTeamSchedulerException() throws SchedulerException {
-        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel("channel").build();
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannel slackChannel = new SlackChannel(channelId, "dummy-channel-name", Collections.emptyList());
 
         when(teamService.saveTeam(eq(slackTeam))).thenThrow(SchedulerException.class);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.of(slackChannel));
 
         boolean result = slackTeamService.saveTeam(slackTeam);
 
@@ -74,9 +104,12 @@ public class SlackTeamServiceTest {
 
     @Test
     public void saveTeamMongoWriteException() throws SchedulerException {
-        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel("channel").build();
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannel slackChannel = new SlackChannel(channelId, "dummy-channel-name", Collections.emptyList());
 
         when(teamService.saveTeam(eq(slackTeam))).thenThrow(MongoWriteException.class);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.of(slackChannel));
 
         boolean result = slackTeamService.saveTeam(slackTeam);
 
@@ -85,9 +118,12 @@ public class SlackTeamServiceTest {
 
     @Test
     public void updateTeam() throws SchedulerException {
-        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel("channel").build();
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannel slackChannel = new SlackChannel(channelId, "dummy-channel-name", Collections.emptyList());
 
         when(teamService.saveTeam(eq(slackTeam))).thenReturn(slackTeam);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.of(slackChannel));
 
         boolean result = slackTeamService.saveTeam(slackTeam);
 
@@ -95,10 +131,32 @@ public class SlackTeamServiceTest {
     }
 
     @Test
+    public void updateTeamNoChannelFound() throws SchedulerException {
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannelDTO slackChannelDTO = new SlackChannelDTO();
+        SlackChannel slackChannel = new SlackChannel("channel", "dummy-channel-name", Collections.emptyList());
+
+        when(teamService.saveTeam(eq(slackTeam))).thenReturn(slackTeam);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.empty());
+        when(slackApiRestService.retrieveSlackChannelDetails(eq(channelId))).thenReturn(slackChannelDTO);
+        when(slackChannelService.convertSlackChannelDtoToSlackChannel(eq(slackChannelDTO))).thenReturn(slackChannel);
+
+        boolean result = slackTeamService.saveTeam(slackTeam);
+
+        assertThat(result, is(true));
+        verify(slackApiRestService).retrieveSlackChannelDetails(channelId);
+        verify(slackChannelService).convertSlackChannelDtoToSlackChannel(slackChannelDTO);
+    }
+
+    @Test
     public void updateTeamSchedulerException() throws SchedulerException {
-        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel("channel").build();
+        String channelId = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().name("teamName").channel(channelId).build();
+        SlackChannel slackChannel = new SlackChannel(channelId, "dummy-channel-name", Collections.emptyList());
 
         when(teamService.saveTeam(eq(slackTeam))).thenThrow(SchedulerException.class);
+        when(slackChannelService.findChannelByIdOrName(eq(channelId), eq(channelId))).thenReturn(Optional.of(slackChannel));
 
         boolean result = slackTeamService.saveTeam(slackTeam);
 
