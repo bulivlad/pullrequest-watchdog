@@ -24,7 +24,7 @@
                 <td th:text="${team.name}" class="text-nowrap"></td>
                 <td th:text="${team.channel}"></td>
                 <td>
-                    <span th:each="user : ${team.members}" th:text="${user.slackUser.username == null ? '-' : user.slackUser.username + ', '}"></span>
+                    <span th:each="user : ${team.members}" th:text="${user.slackUser.username == null || ''.equals(user.slackUser.username) ? user.slackUser.name : user.slackUser.username + ', '}"></span>
                 </td>
                 <td>
                     <span th:each="user : ${team.members}" th:text="${(user.bitbucketUser.username == null ? '-' : user.bitbucketUser.username + ', ')}"></span>

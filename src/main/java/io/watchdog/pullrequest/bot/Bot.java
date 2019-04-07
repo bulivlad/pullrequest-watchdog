@@ -34,6 +34,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
+ * Base class to extend for making Slack bots. This class offers boilerplate methods to deal
+ * with Slack RTM API connection as well as with Slack incoming messages
+ *
  * @author vladclaudiubulimac on 05/03/2018.
  */
 

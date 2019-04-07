@@ -6,6 +6,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 /**
+ * Security config class
+ * Basic auth security method is used by default for every endpoint
+ *
  * @author vladclaudiubulimac on 2019-03-13.
  */
 
