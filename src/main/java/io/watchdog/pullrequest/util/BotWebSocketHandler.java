@@ -1,13 +1,13 @@
 package io.watchdog.pullrequest.util;
 
 
+import io.watchdog.pullrequest.bot.Bot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
-import io.watchdog.pullrequest.bot.Bot;
 
 /**
  * @author vladclaudiubulimac on 22/08/2018.

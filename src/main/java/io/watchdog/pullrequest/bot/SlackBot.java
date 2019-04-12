@@ -41,4 +41,8 @@ public class SlackBot extends Bot {
     protected String getScanPackage(){
         return scanPackage;
     }
+
+    public boolean isKeepAliveSuccessful(){
+        return super.isKeepAliveSuccessful();
+    }
 }

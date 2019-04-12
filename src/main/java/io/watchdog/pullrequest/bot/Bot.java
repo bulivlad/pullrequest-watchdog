@@ -1,7 +1,6 @@
 package io.watchdog.pullrequest.bot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.watchdog.pullrequest.exception.WebSocketNotRespondingException;
 import io.watchdog.pullrequest.model.slack.MethodWrapper;
 import io.watchdog.pullrequest.model.slack.SlackEventMapping;
 import io.watchdog.pullrequest.util.BotWebSocketHandler;
@@ -14,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.MethodAnnotationsScanner;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.socket.CloseStatus;
@@ -48,6 +48,7 @@ public abstract class Bot {
     private final Map<String, List<MethodWrapper>> eventToMethodsMap = new HashMap<>();
     private final Map<String, Queue<MethodWrapper>> conversationQueueMap = new HashMap<>();
     private WebSocketConnectionManager webSocketConnectionManager;
+    private boolean isKeepAliveSuccessful = false;
 
     @Autowired
     private ApplicationContext сontext;
@@ -58,6 +59,12 @@ public abstract class Bot {
     @Autowired
     protected SlackService slackService;
 
+    /**
+     * When true, it will attempt to reconnect in case of websocket failures
+     * Default {@value false}
+     */
+    @Value("${bot.websocket.retry}")
+    private boolean retryWebsocketConnection;
 
     /**
      * Entry point where the web socket connection starts
@@ -156,8 +163,9 @@ public abstract class Bot {
      */
     public void afterConnectionEstablished(WebSocketSession session) {
         log.debug("WebSocket connected: {}", session);
+        isKeepAliveSuccessful = true;
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        scheduledExecutorService.scheduleAtFixedRate(() -> pingMessage(session), 10, 10, TimeUnit.MINUTES);
+        scheduledExecutorService.scheduleAtFixedRate(() -> pingMessage(session), 10, 10, TimeUnit.SECONDS);
     }
 
     /**
@@ -171,8 +179,10 @@ public abstract class Bot {
         try {
             session.sendMessage(new TextMessage(message.toJSONString()));
             log.debug("Keep-alive message was successful");
-        } catch (IOException e) {
-            throw new WebSocketNotRespondingException("Error pinging Slack. Slack bot may go offline when not active", e);
+            isKeepAliveSuccessful = true;
+        } catch (Exception e) {
+            isKeepAliveSuccessful = false;
+            log.error("Error pinging Slack. Slack bot may go offline when not active", e);
         }
     }
 
@@ -185,6 +195,11 @@ public abstract class Bot {
      */
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         log.debug("WebSocket closed: {}, Close Status: {}", session, status.toString());
+        isKeepAliveSuccessful = false;
+        if(retryWebsocketConnection) {
+            log.info("WebSocket was disconnected. Retry to connect !");
+            startWebSocketConnection();
+        }
     }
 
     /**
@@ -429,6 +444,10 @@ public abstract class Bot {
      */
     private BotWebSocketHandler handler() {
         return new BotWebSocketHandler(getSlackBot());
+    }
+
+    protected boolean isKeepAliveSuccessful() {
+        return isKeepAliveSuccessful;
     }
 
 }

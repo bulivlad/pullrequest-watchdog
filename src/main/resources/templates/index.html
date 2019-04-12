@@ -27,13 +27,18 @@
     <li class="nav-item">
         <a class="nav-link disabled" data-toggle="tab" href="#" onclick="alert('Not available yet')" role="tab">Add</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#nav-help" role="tab">Help</a>
+    </li>
 </ul>
 
 <div class="tab-content" id="nav-tabContent">
     <div th:replace="fragments/tabs :: view-tab">&nbsp;</div>
     <div th:replace="fragments/tabs :: add-tab">&nbsp;</div>
+    <div th:replace="fragments/tabs :: help-tab">&nbsp;</div>
 </div>
 <script src="/js/add-tab.js"></script>
 <script src="/js/view-tab.js"></script>
+<script src="/js/help-tab.js"></script>
 </body>
 </html>

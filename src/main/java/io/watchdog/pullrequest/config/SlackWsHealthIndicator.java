@@ -14,10 +14,12 @@ import org.springframework.web.socket.client.WebSocketConnectionManager;
  */
 public class SlackWsHealthIndicator extends AbstractHealthIndicator {
 
+    private final SlackBot slackBot;
     private final WebSocketConnectionManager webSocketConnectionManager;
 
     public SlackWsHealthIndicator(SlackBot slackBot) {
         super((exception) -> "SlackWs health check failed because of " + exception);
+        this.slackBot = slackBot;
         this.webSocketConnectionManager = slackBot.getWebSocketConnectionManager();
     }
 
@@ -33,6 +35,7 @@ public class SlackWsHealthIndicator extends AbstractHealthIndicator {
         builder.up()
                 .withDetail("WebSocketRunning", result)
                 .withDetail("autoStartup", webSocketConnectionManager.isAutoStartup())
+                .withDetail("isConnectionOpen", slackBot.isKeepAliveSuccessful())
                 .build();
     }
 

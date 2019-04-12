@@ -1,13 +1,6 @@
 package io.watchdog.pullrequest.service;
 
 import com.mchange.v2.lang.StringUtils;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 import io.watchdog.pullrequest.config.RepositoryConfig;
 import io.watchdog.pullrequest.dto.PaginatedPullRequestDTO;
 import io.watchdog.pullrequest.dto.ParticipantDTO;
@@ -15,8 +8,17 @@ import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.ReviewerDTO;
 import io.watchdog.pullrequest.model.Role;
 import io.watchdog.pullrequest.model.State;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,16 +82,47 @@ public class PullRequestRetrieveService {
         log.info("Getting Open PR's for {}", reviewers);
         String queryString = buildReviewersQueryString(reviewers);
         try {
-            PaginatedPullRequestDTO paginatedPullRequests = restTemplate.getForObject(
-                    repositoryConfig.getEndpoint() + queryString,
-                    PaginatedPullRequestDTO.class,
-                    repositoryConfig.getUsername(),
-                    getRepoSlug(repoSlug));
+            PaginatedPullRequestDTO paginatedPullRequests = getPaginatedPullRequest(repoSlug, queryString);
+            log.info("Open PR's retrieved for {}", reviewers);
+            return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
+        } catch (ResourceAccessException ex){
+            PaginatedPullRequestDTO paginatedPullRequests = retryGettingPRs(repoSlug, queryString, 0);
             log.info("Open PR's retrieved for {}", reviewers);
             return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
         } catch (RestClientException ex) {
             log.error("Exception on retrieving PR's for " + reviewers, ex);
             return new PaginatedPullRequestDTO();
+        }
+    }
+
+    private PaginatedPullRequestDTO getPaginatedPullRequest(String repoSlug, String queryString) {
+        return restTemplate.getForObject(
+                        repositoryConfig.getEndpoint() + queryString,
+                        PaginatedPullRequestDTO.class,
+                        repositoryConfig.getUsername(),
+                        getRepoSlug(repoSlug));
+    }
+
+    private PaginatedPullRequestDTO retryGettingPRs(String repoSlug, String queryString, int retries) {
+        waitBeforeRetry();
+        int timesToRetry = 5;
+        if (retries < timesToRetry) {
+            try {
+                return getPaginatedPullRequest(repoSlug, queryString);
+            } catch (ResourceAccessException e) { //NOSONAR
+                log.warn("Could not reach Repo when getting the PRS. Retrying.... Error: ", e);
+                retryGettingPRs(repoSlug, queryString, ++retries);
+            }
+        }
+        return new PaginatedPullRequestDTO();
+    }
+
+    private void waitBeforeRetry() {
+        try {
+            long timeToWaitBetweenTries = 500;
+            TimeUnit.SECONDS.sleep(timeToWaitBetweenTries);
+        } catch (InterruptedException e) { //NOSONAR
+            log.error("The wait between retries has been interrupted");
         }
     }
 
