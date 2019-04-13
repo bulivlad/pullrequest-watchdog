@@ -21,6 +21,8 @@ import org.springframework.web.socket.WebSocketSession;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DirectMessageController {
 
+    private static final String SLACKBOT_USER_ID = "USLACKBOT";
+
     SlackBot slackBot;
 
     public DirectMessageController(SlackBot slackBot) {
@@ -34,6 +36,11 @@ public class DirectMessageController {
 
     @Controller(events = EventType.DIRECT_MESSAGE, pattern = SlackEventMapping.DEFAULT)
     public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        if (SLACKBOT_USER_ID.equals(event.getUserId())) {
+            log.debug("Slack bot said '{}'", event.getText());
+            return;
+        }
+
         slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about"));
     }
 }
