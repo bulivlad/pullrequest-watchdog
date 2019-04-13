@@ -94,6 +94,11 @@ public class DirectMentionController {
 
     @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.DEFAULT)
     public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        if(slackBot.getBotUser().getId().equals(event.getUserId())){
+            log.debug("Message from self '{}'", event.getText());
+            return;
+        }
+
         slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about. Try _@username_ help"));
     }
 }

@@ -165,7 +165,7 @@ public abstract class Bot {
         log.debug("WebSocket connected: {}", session);
         isKeepAliveSuccessful = true;
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        scheduledExecutorService.scheduleAtFixedRate(() -> pingMessage(session), 10, 10, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> pingMessage(session), 10, 10, TimeUnit.MINUTES);
     }
 
     /**
@@ -446,6 +446,11 @@ public abstract class Bot {
         return new BotWebSocketHandler(getSlackBot());
     }
 
+    /**
+     * Retrieve the slack web socket keep alive connection status
+     *
+     * @return true if the keep alive to slack web socket was successful
+     */
     protected boolean isKeepAliveSuccessful() {
         return isKeepAliveSuccessful;
     }
