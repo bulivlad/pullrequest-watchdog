@@ -97,7 +97,9 @@ function get_docker_credentials() {
 }
 
 function login() {
-    get_docker_credentials
+    if [[ -z "${DOCKER_USERNAME}" ]] || [[ -z "${DOCKER_PASSWORD}" ]]; then
+        get_docker_credentials
+    fi
     echo -e "\nLogging in to Docker registry..."
     echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
 }
