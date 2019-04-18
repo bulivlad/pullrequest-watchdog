@@ -23,9 +23,6 @@ IMAGE_REPO="dotinc"
 IMAGE_NAME="pullrequest-watchdog"
 IMAGE_PATH="${IMAGE_REPO}/${IMAGE_NAME}"
 
-DOCKER_USERNAME=""
-DOCKER_PASSWORD=""
-
 while getopts ":hbpt:" arg; do
     case $arg in
         h)
