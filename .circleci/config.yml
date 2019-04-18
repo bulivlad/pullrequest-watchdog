@@ -19,6 +19,10 @@ jobs:
           name: Run gradle build
           command: ./gradlew clean build --stacktrace
 
+      - run:
+          name: Run gradle test
+          command: ./gradlew test --stacktrace
+
       - setup_remote_docker:
           docker_layer_caching: true
 
@@ -28,13 +32,13 @@ jobs:
             chmod +x ./scripts/docker-util.sh
             case ${CIRCLE_BRANCH} in
                 master)
-                    ./scripts/docker-build.sh -b -p
+                    ./scripts/docker-util.sh -b -p
                     ;;
                 develop)
-                    ./scripts/docker-build.sh -b -p -t beta
+                    ./scripts/docker-util.sh -b -p -t beta
                     ;;
                 *)
-                    ./scripts/docker-build.sh -b -t dev
+                    ./scripts/docker-util.sh -b -t dev
                     echo "Publish not required for branch: ${CIRCLE_BRANCH}"
                     ;;
             esac
