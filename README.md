@@ -1,0 +1,1 @@
+# PullRequest-watchdog: A Slack bot using schedulers to remind people to approve their open Pull Requests [![CircleCI](https://circleci.com/gh/bulivlad/pullrequest-watchdog.svg?style=svg)](https://circleci.com/gh/bulivlad/pullrequest-watchdog)
