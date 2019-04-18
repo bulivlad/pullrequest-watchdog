@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,7 +19,7 @@ import java.util.List;
 public class PaginatedPullRequestDTO {
 
     @JsonProperty("values")
-    List<PullRequestDTO> pullRequests;
+    List<PullRequestDTO> pullRequests = new ArrayList<>();
 
     @JsonProperty("pagelen")
     Long pageLength;

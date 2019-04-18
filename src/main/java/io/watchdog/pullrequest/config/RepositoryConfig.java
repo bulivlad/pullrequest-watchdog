@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Config class used to deal with git repositories config
  * @author vladclaudiubulimac on 2019-03-01.
  */
 

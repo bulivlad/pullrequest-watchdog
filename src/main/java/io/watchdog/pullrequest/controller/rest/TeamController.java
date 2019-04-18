@@ -48,6 +48,12 @@ public class TeamController {
         return teamService.getSpecificTeamOrNewTeam(channelName, teamName);
     }
 
+    @GetMapping(path = "/{teamName}/{channelName}/{slug}/",
+            produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody SlackTeam getSpecificTeamInSlug(@PathVariable String teamName, @PathVariable String channelName, @PathVariable String slug) {
+        return teamService.getSpecificTeamOrNewTeamInRepo(channelName, teamName, slug);
+    }
+
     @PostMapping(path = "/", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addTeam(@RequestBody SlackTeam slackTeam) {
         boolean saved = slackTeamService.saveTeam(slackTeam);
@@ -70,10 +76,10 @@ public class TeamController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping(path = "/{teamName}/{channelName}/unschedule/", produces = MediaType.APPLICATION_JSON_VALUE,
+    @PutMapping(path = "/{teamName}/{channelName}/{slug}/unschedule/", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity unscheduleTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        boolean unscheduled = slackTeamService.unscheduleTeam(channelName, teamName);
+    public ResponseEntity unscheduleTeam(@PathVariable String teamName, @PathVariable String channelName, @PathVariable String slug) {
+        boolean unscheduled = slackTeamService.unscheduleTeam(channelName, teamName, slug);
         RestResponse response = RestResponse.builder()
                 .entityName(teamName)
                 .scheduled(unscheduled)
@@ -81,10 +87,10 @@ public class TeamController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping(path = "/{teamName}/{channelName}/",
+    @DeleteMapping(path = "/{teamName}/{channelName}/{slug}/",
             produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity removeTeam(@PathVariable String teamName, @PathVariable String channelName) {
-        slackTeamService.removeTeam(channelName, teamName);
+    public ResponseEntity removeTeam(@PathVariable String teamName, @PathVariable String channelName, @PathVariable String slug) {
+        slackTeamService.removeTeam(channelName, teamName, slug);
         RestResponse response = RestResponse.builder().entityName(teamName).build();
         return ResponseEntity.ok(response);
     }

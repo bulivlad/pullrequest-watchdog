@@ -9,6 +9,7 @@ import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -42,7 +43,7 @@ public class SchedulerService {
     }
 
     public boolean rescheduleEventForTeam(SlackTeam slackTeam) throws SchedulerException {
-        TriggerKey triggerKey = TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger");
+        TriggerKey triggerKey = TriggerKey.triggerKey(slackTeam.getName() + "-" + slackTeam.getChannel() + "-" + slackTeam.getSlug() + "-trigger");
 
         if(StringUtils.isEmpty(slackTeam.getCheckingSchedule()) && !scheduler.checkExists(triggerKey)){
             return false;
@@ -67,9 +68,10 @@ public class SchedulerService {
         jobDataMap.put("team", slackTeam.getName());
         jobDataMap.put("channel", slackTeam.getChannel());
         jobDataMap.put("members", slackTeam.getMembers());
+        jobDataMap.put("slug", slackTeam.getSlug());
 
         return JobBuilder.newJob(PullRequestRetrieverJob.class)
-                .withIdentity(slackTeam.getName() + "-" + slackTeam.getChannel() + "-" + UUID.randomUUID().toString())
+                .withIdentity(slackTeam.getName() + "-" + slackTeam.getChannel() + "-" + slackTeam.getSlug() + "-" + UUID.randomUUID().toString())
                 .withDescription("Retrieve Pull Requests job")
                 .usingJobData(jobDataMap)
                 .storeDurably()
@@ -79,10 +81,11 @@ public class SchedulerService {
     private Trigger buildJobTrigger(JobDetail jobDetail, SlackTeam slackTeam){
         return TriggerBuilder.newTrigger()
                 .forJob(jobDetail)
-                .withIdentity(slackTeam.getName() + "-" + slackTeam.getChannel() + "-trigger")
+                .withIdentity(slackTeam.getName() + "-" + slackTeam.getChannel() + "-" + slackTeam.getSlug() + "-trigger")
                 .withDescription("Retrieve Pull Requests trigger")
                 .withSchedule(CronScheduleBuilder.cronSchedule(slackTeam.getCheckingSchedule())
                         .withMisfireHandlingInstructionFireAndProceed()
+                        .inTimeZone(TimeZone.getTimeZone("UTC"))
                         .build()
                         .getScheduleBuilder())
                 .build();

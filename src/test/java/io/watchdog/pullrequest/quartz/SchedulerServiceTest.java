@@ -67,9 +67,9 @@ public class SchedulerServiceTest {
 
     @Test
     public void rescheduleEventForTeamWithoutCronExpression() throws SchedulerException {
-        SlackTeam team = SlackTeam.builder().name("teamName").channel("channel").build();
+        SlackTeam team = SlackTeam.builder().name("teamName").channel("channel").slug("dummy-slug").build();
 
-        TriggerKey triggerKey = TriggerKey.triggerKey(team.getName() + "-" + team.getChannel() + "-trigger");
+        TriggerKey triggerKey = TriggerKey.triggerKey(team.getName() + "-" + team.getChannel() + "-" + team.getSlug() + "-trigger");
         when(scheduler.checkExists(eq(triggerKey))).thenReturn(true);
 
         boolean result = schedulerService.rescheduleEventForTeam(team);
@@ -81,9 +81,9 @@ public class SchedulerServiceTest {
 
     @Test
     public void rescheduleEventForTeamNoTriggerExistent() throws SchedulerException {
-        SlackTeam team = SlackTeam.builder().name("teamName").channel("channel").build();
+        SlackTeam team = SlackTeam.builder().name("teamName").channel("channel").slug("dummy-slug").build();
 
-        TriggerKey triggerKey = TriggerKey.triggerKey(team.getName() + "-" + team.getChannel() + "-trigger");
+        TriggerKey triggerKey = TriggerKey.triggerKey(team.getName() + "-" + team.getChannel() + "-" + team.getSlug() + "-trigger");
         when(scheduler.checkExists(eq(triggerKey))).thenReturn(false);
 
         boolean result = schedulerService.rescheduleEventForTeam(team);

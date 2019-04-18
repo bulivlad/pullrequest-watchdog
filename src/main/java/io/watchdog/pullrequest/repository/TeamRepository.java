@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface TeamRepository extends MongoRepository<SlackTeam, String> {
 
     Optional<SlackTeam> findSlackTeamByChannelAndName(String channel, String name);
+    Optional<SlackTeam> findSlackTeamByChannelAndNameAndSlug(String channel, String name, String slug);
     List<SlackTeam> findSlackTeamsByChannel(String channel);
     List<SlackTeam> findAllByCheckingScheduleIsNotNull();
 

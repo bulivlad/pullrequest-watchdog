@@ -1,12 +1,6 @@
 package io.watchdog.pullrequest.service;
 
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import com.mchange.v2.lang.StringUtils;
 import io.watchdog.pullrequest.config.RepositoryConfig;
 import io.watchdog.pullrequest.dto.PaginatedPullRequestDTO;
 import io.watchdog.pullrequest.dto.ParticipantDTO;
@@ -14,8 +8,17 @@ import io.watchdog.pullrequest.dto.PullRequestDTO;
 import io.watchdog.pullrequest.dto.ReviewerDTO;
 import io.watchdog.pullrequest.model.Role;
 import io.watchdog.pullrequest.model.State;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,7 +44,7 @@ public class PullRequestRetrieveService {
 
     public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviewers(List<String> reviewers) {
         Map<String, List<ReviewerDTO>> unapprovedPRs = new HashMap<>();
-        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
+        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers, repositoryConfig.getSlug());
         teamUnapprovedPullRequests.forEach(pullRequestDTO -> {
             Set<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
             if (!usersToApprove.isEmpty()) {
@@ -51,39 +54,39 @@ public class PullRequestRetrieveService {
         return unapprovedPRs;
     }
 
-    public List<PullRequestDTO> getUnapprovedPRs(List<String> reviewers) {
-        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers);
+    public List<PullRequestDTO> getUnapprovedPRs(List<String> reviewers, String repoSlug) {
+        Stream<PullRequestDTO> teamUnapprovedPullRequests = getTeamOpenedPullRequests(reviewers, repoSlug);
         return teamUnapprovedPullRequests.peek(pullRequestDTO -> {
             Set<ReviewerDTO> usersToApprove = getUsersToApprove(reviewers, pullRequestDTO);
             pullRequestDTO.setReviewers(new ArrayList<>(usersToApprove));
         }).collect(Collectors.toList());
     }
 
-    private Stream<PullRequestDTO> getTeamOpenedPullRequests(List<String> member) {
-        Stream<PullRequestDTO> pullRequestDTOStream = getAllTeamPullRequests(member);
+    private Stream<PullRequestDTO> getTeamOpenedPullRequests(List<String> member, String repoSlug) {
+        Stream<PullRequestDTO> pullRequestDTOStream = getAllTeamPullRequests(member, repoSlug);
         return pullRequestDTOStream.map(PullRequestDTO::getId)
-                .map(this::fetchMemberDetailedPullRequest)
+                .map(pullRequestId -> fetchMemberDetailedPullRequest(pullRequestId, repoSlug))
                 .map(Optional::get)
                 .filter(pullRequestDTO -> State.OPEN.equals(pullRequestDTO.getState()));
     }
 
-    private Stream<PullRequestDTO> getAllTeamPullRequests(List<String> reviewers){
-        PaginatedPullRequestDTO paginatedPullRequestDTOs = fetchPaginatedTeamOpenPullRequests(reviewers);
+    private Stream<PullRequestDTO> getAllTeamPullRequests(List<String> reviewers, String repoSlug){
+        PaginatedPullRequestDTO paginatedPullRequestDTOs = fetchPaginatedTeamOpenPullRequests(reviewers, repoSlug);
         Set<PullRequestDTO> pullRequestDTOs = new HashSet<>(paginatedPullRequestDTOs.getPullRequests());
         PullRequestDTOIterator pullRequestDTOIterator = new PullRequestDTOIterator(paginatedPullRequestDTOs, restTemplate);
         pullRequestDTOIterator.forEachRemaining(paginatedPullRequest -> pullRequestDTOs.addAll(paginatedPullRequest.getPullRequests()));
         return pullRequestDTOs.stream();
     }
 
-    private PaginatedPullRequestDTO fetchPaginatedTeamOpenPullRequests(List<String> reviewers) {
+    private PaginatedPullRequestDTO fetchPaginatedTeamOpenPullRequests(List<String> reviewers, String repoSlug) {
         log.info("Getting Open PR's for {}", reviewers);
         String queryString = buildReviewersQueryString(reviewers);
         try {
-            PaginatedPullRequestDTO paginatedPullRequests = restTemplate.getForObject(
-                    repositoryConfig.getEndpoint() + queryString,
-                    PaginatedPullRequestDTO.class,
-                    repositoryConfig.getUsername(),
-                    repositoryConfig.getSlug());
+            PaginatedPullRequestDTO paginatedPullRequests = getPaginatedPullRequest(repoSlug, queryString);
+            log.info("Open PR's retrieved for {}", reviewers);
+            return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
+        } catch (ResourceAccessException ex){
+            PaginatedPullRequestDTO paginatedPullRequests = retryGettingPRs(repoSlug, queryString, 0);
             log.info("Open PR's retrieved for {}", reviewers);
             return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
         } catch (RestClientException ex) {
@@ -92,19 +95,50 @@ public class PullRequestRetrieveService {
         }
     }
 
-    private Optional<PullRequestDTO> fetchMemberDetailedPullRequest(Long pullRequestId) {
+    private PaginatedPullRequestDTO getPaginatedPullRequest(String repoSlug, String queryString) {
+        return restTemplate.getForObject(
+                        repositoryConfig.getEndpoint() + queryString,
+                        PaginatedPullRequestDTO.class,
+                        repositoryConfig.getUsername(),
+                        getRepoSlug(repoSlug));
+    }
+
+    private PaginatedPullRequestDTO retryGettingPRs(String repoSlug, String queryString, int retries) {
+        waitBeforeRetry();
+        int timesToRetry = 5;
+        if (retries < timesToRetry) {
+            try {
+                return getPaginatedPullRequest(repoSlug, queryString);
+            } catch (ResourceAccessException e) { //NOSONAR
+                log.warn("Could not reach Repo when getting the PRS. Retrying.... Error: ", e);
+                retryGettingPRs(repoSlug, queryString, ++retries);
+            }
+        }
+        return new PaginatedPullRequestDTO();
+    }
+
+    private void waitBeforeRetry() {
+        try {
+            long timeToWaitBetweenTries = 500;
+            TimeUnit.SECONDS.sleep(timeToWaitBetweenTries);
+        } catch (InterruptedException e) { //NOSONAR
+            log.error("The wait between retries has been interrupted");
+        }
+    }
+
+    private Optional<PullRequestDTO> fetchMemberDetailedPullRequest(Long pullRequestId, String repoSlug) {
         log.info("Getting PR with id {}", pullRequestId);
         try {
             PullRequestDTO pullRequest = restTemplate.getForObject(
                     repositoryConfig.getEndpoint() + "/{pullRequestId}",
                     PullRequestDTO.class,
                     repositoryConfig.getUsername(),
-                    repositoryConfig.getSlug(),
+                    getRepoSlug(repoSlug),
                     pullRequestId);
             pullRequest.setLink(String.format(
                     repositoryConfig.getPullRequestsUrl(),
                     repositoryConfig.getUsername(),
-                    repositoryConfig.getSlug(),
+                    getRepoSlug(repoSlug),
                     pullRequestId));
             return Optional.of(pullRequest);
         } catch (RestClientException ex) {
@@ -132,5 +166,9 @@ public class PullRequestRetrieveService {
         stringBuilder.append("reviewers.username=\"");
         stringBuilder.append(reviewer);
         stringBuilder.append("\" OR ");
+    }
+
+    private String getRepoSlug(String repoSlug) {
+        return StringUtils.nonEmptyString(repoSlug) ? repoSlug : repositoryConfig.getSlug();
     }
 }

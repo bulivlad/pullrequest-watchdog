@@ -16,7 +16,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'io.watchdog.pullrequest'
-version = '0.1.3'
+version = '1.0.0'
 sourceCompatibility = 1.8
 
 repositories {
@@ -34,12 +34,16 @@ jar {
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 	compile('org.springframework.boot:spring-boot-starter-validation')
+	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
 	compile('org.springframework.boot:spring-boot-starter-actuator')
 	compile('org.springframework.boot:spring-boot-starter-security')
+	compile('org.springframework.retry:spring-retry:1.2.4.RELEASE')
 	compile('org.springframework.boot:spring-boot-starter-log4j2')
 	compile('org.springframework.boot:spring-boot-starter-quartz')
+	compile('org.springframework.boot:spring-boot-starter-web')
 	compile('org.reflections:reflections:0.9.11')
 	compile('com.google.guava:guava:27.0.1-jre')
+	compile('org.aspectj:aspectjweaver:1.9.2')
 	compile('org.projectlombok:lombok:1.18.6')
 	compile('commons-lang:commons-lang:2.6')
 	compile("me.ramswaroop.jbot:jbot:3.0.2")

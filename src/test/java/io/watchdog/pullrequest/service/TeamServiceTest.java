@@ -1,5 +1,6 @@
 package io.watchdog.pullrequest.service;
 
+import io.watchdog.pullrequest.config.RepositoryConfig;
 import io.watchdog.pullrequest.dto.BitbucketUserDTO;
 import io.watchdog.pullrequest.model.BitbucketUser;
 import io.watchdog.pullrequest.model.CorrelatedUser;
@@ -40,6 +41,8 @@ public class TeamServiceTest {
     BitBucketApiRestService bitBucketApiRestService;
     @Mock
     SchedulerService schedulerService;
+    @Mock
+    RepositoryConfig repositoryConfig;
 
     @InjectMocks
     TeamService teamService;
@@ -102,7 +105,7 @@ public class TeamServiceTest {
         slackUser.setEmail("bbusername@example.com");
 
         String channel = "channel";
-        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name("teamName").member(new CorrelatedUser(slackUser)).build();
+        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name("teamName").member(new CorrelatedUser(slackUser)).slug("dummy-slug").build();
 
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail("bbusername@example.com")).thenReturn(bitbucketUserDTO);
         when(schedulerService.scheduleEventForTeam(eq(slackTeam))).thenReturn(true);
@@ -114,6 +117,35 @@ public class TeamServiceTest {
         assertThat(result.getMembers().size(), equalTo(1));
         assertThat(result.getMembers().get(0).getSlackUser(), equalTo(slackUser));
         assertThat(result.getMembers().get(0).getBitbucketUser(), equalTo(bitbucketUser));
+        assertThat(result.getSlug(), equalTo("dummy-slug"));
+    }
+
+    @Test
+    public void saveTeamWithoutSlug() throws SchedulerException {
+        BitbucketUserDTO bitbucketUserDTO = new BitbucketUserDTO();
+        bitbucketUserDTO.setUsername("bbusername");
+        bitbucketUserDTO.setDisplayName("BB Username");
+
+        BitbucketUser bitbucketUser = BitbucketUser.builder().username("bbusername").name("BB Username").build();
+
+        SlackUser slackUser = new SlackUser();
+        slackUser.setEmail("bbusername@example.com");
+
+        String channel = "channel";
+        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name("teamName").member(new CorrelatedUser(slackUser)).build();
+
+        when(repositoryConfig.getSlug()).thenReturn("dummy-slug");
+        when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail("bbusername@example.com")).thenReturn(bitbucketUserDTO);
+        when(schedulerService.scheduleEventForTeam(eq(slackTeam))).thenReturn(true);
+        when(teamRepository.save(eq(slackTeam))).thenReturn(slackTeam);
+
+        SlackTeam result = teamService.saveTeam(slackTeam);
+
+        assertThat(result, notNullValue());
+        assertThat(result.getMembers().size(), equalTo(1));
+        assertThat(result.getMembers().get(0).getSlackUser(), equalTo(slackUser));
+        assertThat(result.getMembers().get(0).getBitbucketUser(), equalTo(bitbucketUser));
+        assertThat(result.getSlug(), equalTo("dummy-slug"));
     }
 
     @Test(expected = SchedulerException.class)
@@ -128,7 +160,7 @@ public class TeamServiceTest {
         slackUser.setEmail("bbusername@example.com");
 
         String channel = "channel";
-        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name("teamName").member(new CorrelatedUser(slackUser)).build();
+        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name("teamName").member(new CorrelatedUser(slackUser)).slug("dummy-slug").build();
 
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail("bbusername@example.com")).thenReturn(bitbucketUserDTO);
         doThrow(SchedulerException.class).when(schedulerService).scheduleEventForTeam(eq(slackTeam));
@@ -155,7 +187,6 @@ public class TeamServiceTest {
         String teamName = "teamName";
         SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.empty());
         when(schedulerService.rescheduleEventForTeam(eq(slackTeam))).thenReturn(true);
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(eq("bbusername@example.com"))).thenReturn(bitbucketUserDTO);
         when(teamRepository.save(eq(slackTeam))).thenReturn(slackTeam);
@@ -183,10 +214,11 @@ public class TeamServiceTest {
 
         String channel = "channel";
         String teamName = "teamName";
-        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
+        String slug = "dummy-slug";
+        SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).slug("dummy-slug").build();
         SlackTeam existentSlackTeam = SlackTeam.builder().id("1").channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.of(existentSlackTeam));
+        when(teamRepository.findSlackTeamByChannelAndNameAndSlug(eq(channel), eq(teamName), eq(slug))).thenReturn(Optional.of(existentSlackTeam));
         when(schedulerService.rescheduleEventForTeam(eq(slackTeam))).thenReturn(true);
         when(bitBucketApiRestService.fetchBitbucketUserDetailsByEmail(eq("bbusername@example.com"))).thenReturn(bitbucketUserDTO);
         when(teamRepository.save(eq(slackTeam))).thenReturn(slackTeam);
@@ -210,7 +242,7 @@ public class TeamServiceTest {
         SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
         SlackTeam existentSlackTeam = SlackTeam.builder().id("1").channel(channel).name(teamName).member(new CorrelatedUser(slackUser)).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.of(existentSlackTeam));
+        when(teamRepository.findSlackTeamByChannelAndNameAndSlug(eq(channel), eq(teamName), eq(null))).thenReturn(Optional.of(existentSlackTeam));
         doThrow(SchedulerException.class).when(schedulerService).rescheduleEventForTeam(eq(slackTeam));
 
         teamService.updateTeam(slackTeam);
@@ -220,13 +252,14 @@ public class TeamServiceTest {
     public void deleteTeam() throws SchedulerException {
         String channel = "channel";
         String teamName = "teamName";
+        String slug = "dummy-slug";
 
         SlackTeam slackTeam = SlackTeam.builder().channel(channel).name(teamName).build();
 
-        when(teamRepository.findSlackTeamByChannelAndName(eq(channel), eq(teamName))).thenReturn(Optional.empty());
+        when(teamRepository.findSlackTeamByChannelAndNameAndSlug(eq(channel), eq(teamName), eq(slug))).thenReturn(Optional.empty());
         doNothing().when(teamRepository).delete(eq(slackTeam));
 
-        boolean result = teamService.deleteTeam(channel, teamName);
+        boolean result = teamService.deleteTeam(channel, teamName, slug);
 
         assertThat(result, is(true));
     }

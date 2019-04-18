@@ -10,12 +10,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 
 @Slf4j
+@EnableRetry
 @SpringBootApplication(scanBasePackages = {"me.ramswaroop.jbot", "io.watchdog.pullrequest"})
 public class BitbucketSlackbotApplication {
 

@@ -39,7 +39,7 @@ public class DirectMentionController {
         SlackTeam slackTeam = slackTeamService.buildSlackTeam(event);
         boolean saved = slackTeamService.saveTeam(slackTeam);
         if (!saved) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team is already existing or it was already scheduled!"));
             return;
         }
@@ -52,14 +52,17 @@ public class DirectMentionController {
         String teamName = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
                 SlackEventMapping.REMOVE_TEAM_EVENT_REGEX.getValue(),
                 "teamName").orElseThrow(IllegalArgumentException::new);
+        String repoSlug = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
+                SlackEventMapping.REMOVE_TEAM_EVENT_REGEX.getValue(),
+                "repository").orElseThrow(IllegalArgumentException::new);
 
-        boolean removed = slackTeamService.removeTeam(channel, teamName);
+        boolean removed = slackTeamService.removeTeam(channel, teamName, repoSlug);
         if(!removed) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team could not be removed!"));
             return;
         }
-        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , team " + teamName +" removed!"));
+        slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , team *" + teamName + "* for repository *" + repoSlug +"* removed!"));
     }
 
     @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX)
@@ -68,19 +71,34 @@ public class DirectMentionController {
         String teamName = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
                 SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX.getValue(),
                 "teamName").orElseThrow(IllegalArgumentException::new);
+        String repoSlug = BotUtil.getGroupMatcherFromEventMessage(event.getText(),
+                SlackEventMapping.UNSCHEDULE_TEAM_EVENT_REGEX.getValue(),
+                "repository").orElseThrow(IllegalArgumentException::new);
 
-        boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName);
+        boolean unscheduled = slackTeamService.unscheduleTeam(channel, teamName, repoSlug);
         if (!unscheduled) {
-            slackBot.reply(session, event, new Message(":negative_squared_cross_mark: ERROR <@" + event.getUserId()
+            slackBot.reply(session, event, new Message(":x: ERROR <@" + event.getUserId()
                     + "> , team could not be unscheduled!"));
             return;
         }
         slackBot.reply(session, event, new Message(":white_check_mark: OK <@" + event.getUserId() + "> , Unscheduled " + unscheduled + "!"));
     }
 
-    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.DEFAULT)
-    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
-        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about"));
+    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.HELP_REGEX)
+    public void onReceiveHelpMention(WebSocketSession session, Event event) {
+        slackBot.reply(session, event, new Message(":muscle: I'm here to help! Try something like: "));
+        slackBot.reply(session, event, new Message("add team {team name} for repository {repository} with members [{@member1}, {@member2}, .. {@member n}] and scheduler {cron expression}"));
+        slackBot.reply(session, event, new Message("remove team {team name} for repository {repository}"));
+        slackBot.reply(session, event, new Message("unschedule team {team name} for repository {repository}"));
     }
 
+    @Controller(events = EventType.DIRECT_MENTION, pattern = SlackEventMapping.DEFAULT)
+    public void onReceiveDefaultDirectMention(WebSocketSession session, Event event) {
+        if(slackBot.getBotUser().getId().equals(event.getUserId())){
+            log.debug("Message from self '{}'", event.getText());
+            return;
+        }
+
+        slackBot.reply(session, event, new Message(":confused: Sorry folk, I don't know what you are talking about. Try _@username_ help"));
+    }
 }

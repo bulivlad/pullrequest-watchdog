@@ -74,7 +74,7 @@ public class BitBucketApiRestServiceTest {
         assertEquals(bitbucketUserDTO, result);
     }
 
-    @Test
+    @Test(expected = RestClientException.class)
     public void fetchBitbucketUserDetailsByEmailRestException() {
         String email = "email@example.com";
         String usersUrl = "http://dummy.com/users/{email}";

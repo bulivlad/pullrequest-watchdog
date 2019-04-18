@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link href="../../../resources/css/bootstrap.min.css" rel="stylesheet" media="screen" th:href="@{/resources/css/bootstrap.min.css}"/>
+</head>
+<body>
+    <div th:fragment="view-tab" class="tab-pane fade show active" id="nav-view" role="tabpanel" aria-labelledby="nav-home-tab">
+        <div><i class="fas fa-search"></i><input id="search" type="text" placeholder="Search.."></div>
+        <table id="team-table" class="table table-striped my-2 my-lg-5" cellspacing="0" width="50%">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col" class="sortable"><b>Name</b> <i class="fas fa-sort"></i></th>
+                <th scope="col" class="sortable"><b>Channel</b> <i class="fas fa-sort"></i></th>
+                <th scope="col">Members - slack</th>
+                <th scope="col">Members - bitbucket</th>
+                <th scope="col" class="sortable"><b>Repo</b> <i class="fas fa-sort"></i></th>
+                <th scope="col">Schedule</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="team,iter : ${teams}">
+                <th scope="row" th:text="${iter.index + 1}"></th>
+                <td th:text="${team.name}" class="text-nowrap"></td>
+                <td th:text="${team.channel}"></td>
+                <td>
+                    <span th:each="user : ${team.members}" th:text="${(user.slackUser.username == null || ''.equals(user.slackUser.username) ? user.slackUser.name : user.slackUser.username) + ', '}"></span>
+                </td>
+                <td>
+                    <span th:each="user : ${team.members}" th:text="${(user.bitbucketUser.username == null ? '-' : user.bitbucketUser.username + ', ')}"></span>
+                </td>
+                <td th:text="${team.slug}"></td>
+                <td th:text="${team.checkingSchedule == '' ? '-' : team.checkingSchedule}" class="text-nowrap"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div th:fragment="add-tab" class="tab-pane fade hide" id="nav-add" role="tabpanel" aria-labelledby="nav-home-tab">
+        <div class="wrapper">
+            <form>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+                        <input type="text" class="form-control" name="teamName" required placeholder="Team name">
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+                        <label class="sr-only" for="inlineChannel">Channel</label>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">#</div>
+                            </div>
+                            <input type="text" class="form-control" name="channel" required id="inlineChannel" placeholder="Channel">
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+                        <input type="text" class="form-control" name="scheduler" placeholder="Schedule">
+                    </div>
+                </div>
+                <div class="row pt-5" id="members-area">
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+                        <label class="sr-only" for="inlineMember">Member</label>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">@</div>
+                            </div>
+                            <input type="text" class="form-control" name="members[0]" required id="inlineMember" placeholder="Member">
+                            <div class="input-group-append">
+                                <button id="add-member" class="btn btn-success" type="button">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 text-center">
+                    <button id="submit" class="btn btn-success" type="submit" disabled>Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div th:fragment="help-tab" class="tab-pane fade hide" id="nav-help" role="tabpanel" aria-labelledby="nav-home-tab">
+        <div class="wrapper">
+            <div class="row">
+                <div class="col-4">
+                    <div class="list-group" id="list-tab" role="tablist">
+                        <a class="list-group-item list-group-item-action active" id="list-add-list" data-toggle="list" href="#list-add" role="tab" aria-controls="home">Add team</a>
+                        <a class="list-group-item list-group-item-action" id="list-remove-list" data-toggle="list" href="#list-remove" role="tab" aria-controls="profile">Remove team</a>
+                        <a class="list-group-item list-group-item-action" id="list-unschedule-list" data-toggle="list" href="#list-unschedule" role="tab" aria-controls="messages">Unschedule team</a>
+                        <a class="list-group-item list-group-item-action" id="list-help-list" data-toggle="list" href="#list-help" role="tab" aria-controls="messages">Help</a>
+                    </div>
+                </div>
+                <div class="col-8">
+                    <div class="tab-content" id="nav-tabContent">
+                        <div class="tab-pane fade show active" id="list-add" role="tabpanel" aria-labelledby="list-add-list">
+                            <div>I'm here to help! Try something like:</div>
+                            <div>{@username} add team {team name} for repository {repository} with members [{@member1}, {@member2}, .. {@member n}] and scheduler {cron expression}</div>
+                            <img src="img/add.png" class="img-fluid mt-3" style="max-width: 100%; height: auto;">
+                        </div>
+                        <div class="tab-pane fade" id="list-remove" role="tabpanel" aria-labelledby="list-remove-list">
+                            <div>I'm here to help! Try something like:</div>
+                            <div>{@username} remove team {team name} for repository {repository}</div>
+                            <img src="img/remove.png" class="img-fluid mt-3" style="max-width: 100%; height: auto;">
+                        </div>
+                        <div class="tab-pane fade" id="list-unschedule" role="tabpanel" aria-labelledby="list-unschedule-list">
+                            <div>I'm here to help! Try something like:</div>
+                            <div>{@username} unschedule team {team name} for repository {repository}</div>
+                            <img src="img/unschedule.png" class="img-fluid mt-3" style="max-width: 100%; height: auto;">
+                        </div>
+                        <div class="tab-pane fade" id="list-help" role="tabpanel" aria-labelledby="list-help-list">
+                            <div>I'm here to help! Try something like:</div>
+                            <div>{@username} help</div>
+                            <img src="img/help.png" class="img-fluid mt-3" style="max-width: 100%; height: auto;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
