@@ -24,5 +24,6 @@ public class ReviewerDTO {
     String displayName;
     @JsonProperty("account_id")
     String accountId;
+    String nickname;
 
 }

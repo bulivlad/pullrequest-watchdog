@@ -22,5 +22,8 @@ public class BitbucketUserDTO {
     String firstName;
     @JsonProperty("display_name")
     String displayName;
+    String nickname;
+    @JsonProperty("account_id")
+    String accountId;
 
 }
