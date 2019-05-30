@@ -170,7 +170,7 @@ public class SlackTeamService {
                 .filter(user -> Objects.nonNull(user.getBitbucketUser().getAccountId()))
                 .filter(users -> users.getBitbucketUser().getAccountId().equals(reviewerAccountId))
                 .findFirst()
-                .orElse(new CorrelatedUser())
+                .orElse(new CorrelatedUser(new SlackUser("missingUser", "missingName", "missingEmail", "missingMention")))
                 .getSlackUser()
                 .getMention();
     }

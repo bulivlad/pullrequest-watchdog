@@ -45,7 +45,7 @@ public class PullRequestRetrieveServiceTest {
     PullRequestRetrieveService pullRequestRetrieveService;
 
     private static final String REPO_CONFIG_ENDPOINT = "https://dummy.com/repositories/{username}/{slug}/pullrequests";
-    private static final String REVIEWERS_QUERY_STRING = "?pagelen=50&q=(reviewers.username=\"bb-user1\" OR reviewers.username=\"bb-user2\" OR reviewers.username=\"bb-user3\" ) AND state=\"OPEN\"";
+    private static final String REVIEWERS_QUERY_STRING = "?pagelen=50&q=(reviewers.account_id=\"bb-accId1\" OR reviewers.account_id=\"bb-accId2\" OR reviewers.account_id=\"bb-accId3\" ) AND state=\"OPEN\"";
     private static final String SLUG = "dummy-slug";
     private static final String USERNAME = "dummy-username";
 
@@ -59,9 +59,10 @@ public class PullRequestRetrieveServiceTest {
 
     @Test
     public void getUnapprovedPRsWithReviewersOneReviewer() {
-        List<String> reviewers = Arrays.asList("bb-user1", "bb-user2", "bb-user3");
+        List<String> reviewers = Arrays.asList("bb-accId1", "bb-accId2", "bb-accId3");
         ReviewerDTO reviewerDTO = new ReviewerDTO();
         reviewerDTO.setUsername("bb-user1");
+        reviewerDTO.setAccountId("bb-accId1");
 
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOSinglePR());
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(buildPullRequestDTOOneReviewer());
@@ -76,11 +77,13 @@ public class PullRequestRetrieveServiceTest {
 
     @Test
     public void getUnapprovedPRsWithReviewersMultipleReviewers() {
-        List<String> reviewers = Arrays.asList("bb-user1", "bb-user2", "bb-user3");
+        List<String> reviewers = Arrays.asList("bb-accId1", "bb-accId2", "bb-accId3");
         ReviewerDTO reviewerDTO = new ReviewerDTO();
         reviewerDTO.setUsername("bb-user1");
+        reviewerDTO.setAccountId("bb-accId1");
         ReviewerDTO reviewerDTO3 = new ReviewerDTO();
         reviewerDTO3.setUsername("bb-user3");
+        reviewerDTO3.setAccountId("bb-accId3");
         List<ReviewerDTO> expected = Arrays.asList(reviewerDTO, reviewerDTO3);
 
         when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOMultiplePRs());
@@ -105,12 +108,13 @@ public class PullRequestRetrieveServiceTest {
 
     @Test
     public void getUnapprovedPRsSinglePR() {
-        List<String> reviewers = Arrays.asList("bb-user1", "bb-user2", "bb-user3");
+        List<String> reviewers = Arrays.asList("bb-accId1", "bb-accId2", "bb-accId3");
 
-        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1");
-        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2");
+        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1", "bb-accId1");
+        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2", "bb-accId2");
         ReviewerDTO reviewerDTO = new ReviewerDTO();
         reviewerDTO.setUsername("bb-user1");
+        reviewerDTO.setAccountId("bb-accId1");
 
         PullRequestDTO expected = buildPullRequestDTO(1L, "origin/source-branch", Arrays.asList(participantDTO1, participantDTO2), Collections.singletonList(reviewerDTO));
 
@@ -126,11 +130,11 @@ public class PullRequestRetrieveServiceTest {
 
     @Test
     public void getUnapprovedPRsMultiplePR() {
-        List<String> reviewers = Arrays.asList("bb-user1", "bb-user2", "bb-user3");
+        List<String> reviewers = Arrays.asList("bb-accId1", "bb-accId2", "bb-accId3");
 
-        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1");
-        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2");
-        ParticipantDTO participantDTO3 = buildParticipantDTO(Role.REVIEWER, "bb-user3");
+        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1", "bb-accId1");
+        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2", "bb-accId2");
+        ParticipantDTO participantDTO3 = buildParticipantDTO(Role.REVIEWER, "bb-user3", "bb-accId3");
 
         PullRequestDTO expectedPr1 = buildPullRequestDTO(1L, "origin/source-branch-1", Arrays.asList(participantDTO1, participantDTO2, participantDTO3), Arrays.asList(participantDTO1.getReviewerDTO(), participantDTO3.getReviewerDTO()));
         PullRequestDTO expectedPr2 = buildPullRequestDTO(2L, "origin/source-branch-2", Arrays.asList(participantDTO1, participantDTO2, participantDTO3), Arrays.asList(participantDTO1.getReviewerDTO(), participantDTO3.getReviewerDTO()));
@@ -187,8 +191,8 @@ public class PullRequestRetrieveServiceTest {
     }
 
     private PullRequestDTO buildPullRequestDTOOneReviewer() {
-        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1");
-        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2");
+        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1", "bb-accId1");
+        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2", "bb-accId2");
 
         PullRequestDTO pullRequestDTO = new PullRequestDTO();
         pullRequestDTO.setId(1L);
@@ -200,9 +204,9 @@ public class PullRequestRetrieveServiceTest {
     }
 
     private PullRequestDTO buildPullRequestDTOMultipleReviewers(Long prId, String sourceBranch) {
-        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1");
-        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2");
-        ParticipantDTO participantDTO3 = buildParticipantDTO(Role.REVIEWER, "bb-user3");
+        ParticipantDTO participantDTO1 = buildParticipantDTO(Role.REVIEWER, "bb-user1", "bb-accId1");
+        ParticipantDTO participantDTO2 = buildParticipantDTO(Role.PARTICIPANT, "bb-user2", "bb-accId2");
+        ParticipantDTO participantDTO3 = buildParticipantDTO(Role.REVIEWER, "bb-user3", "bb-accId3");
 
         PullRequestDTO pullRequestDTO = new PullRequestDTO();
         pullRequestDTO.setId(prId);
@@ -213,11 +217,12 @@ public class PullRequestRetrieveServiceTest {
         return  pullRequestDTO;
     }
 
-    private ParticipantDTO buildParticipantDTO(Role reviewer, String username) {
+    private ParticipantDTO buildParticipantDTO(Role reviewer, String username, String accountId) {
         ParticipantDTO participantDTO = new ParticipantDTO();
         participantDTO.setRole(reviewer);
         ReviewerDTO reviewerDTO = new ReviewerDTO();
         reviewerDTO.setUsername(username);
+        reviewerDTO.setAccountId(accountId);
         participantDTO.setReviewerDTO(reviewerDTO);
         participantDTO.setApproved(false);
         return participantDTO;
