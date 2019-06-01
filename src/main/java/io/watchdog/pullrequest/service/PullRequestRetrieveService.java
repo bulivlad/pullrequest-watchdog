@@ -150,7 +150,7 @@ public class PullRequestRetrieveService {
     private Set<ReviewerDTO> getUsersToApprove(List<String> reviewers, PullRequestDTO pullRequestDTO) {
         return pullRequestDTO.getParticipants().stream()
                 .filter(participantDTO -> Role.REVIEWER.equals(participantDTO.getRole()))
-                .filter(participantDTO -> reviewers.contains(participantDTO.getReviewerDTO().getUsername()))
+                .filter(participantDTO -> reviewers.contains(participantDTO.getReviewerDTO().getAccountId()))
                 .filter(participantDTO -> !participantDTO.getApproved())
                 .map(ParticipantDTO::getReviewerDTO)
                 .collect(Collectors.toSet());
@@ -163,7 +163,7 @@ public class PullRequestRetrieveService {
     }
 
     private void appendReviewers(StringBuilder stringBuilder, String reviewer) {
-        stringBuilder.append("reviewers.username=\"");
+        stringBuilder.append("reviewers.account_id=\"");
         stringBuilder.append(reviewer);
         stringBuilder.append("\" OR ");
     }

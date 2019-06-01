@@ -167,6 +167,7 @@ public class SlackTeamServiceTest {
     public void getSlackMessages() {
         BitbucketUser bitbucketUser = new BitbucketUser();
         bitbucketUser.setUsername("bbusername");
+        bitbucketUser.setAccountId("bbAccId");
         SlackUser slackUser = new SlackUser();
         slackUser.setMention("bbusernamemention");
         slackUser.setUsername("bbusername");
@@ -176,6 +177,7 @@ public class SlackTeamServiceTest {
 
         BitbucketUser bitbucketUser1 = new BitbucketUser();
         bitbucketUser1.setUsername("bbusername1");
+        bitbucketUser1.setAccountId("bbAccId1");
         SlackUser slackUser1 = new SlackUser();
         slackUser1.setMention("bbusernamemention1");
         slackUser1.setUsername("bbusername1");
@@ -187,8 +189,10 @@ public class SlackTeamServiceTest {
 
         ReviewerDTO reviewerDTO = new ReviewerDTO();
         reviewerDTO.setUsername("bbusername");
+        reviewerDTO.setAccountId("bbAccId");
         ReviewerDTO reviewerDTO1 = new ReviewerDTO();
         reviewerDTO1.setUsername("bbusername1");
+        reviewerDTO1.setAccountId("bbAccId1");
 
         PullRequestDTO pullRequestDTO = new PullRequestDTO();
         pullRequestDTO.setReviewers(Arrays.asList(reviewerDTO, reviewerDTO1));

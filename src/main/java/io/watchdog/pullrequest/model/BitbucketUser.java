@@ -16,12 +16,14 @@ public class BitbucketUser extends User {
 
     Role role;
     Boolean approved;
+    String accountId;
 
     @Builder
-    public BitbucketUser(String username, String name, Role role, Boolean approved) {
+    public BitbucketUser(String username, String name, Role role, Boolean approved, String accountId) {
         super(username, name);
         this.role = role;
         this.approved = approved;
+        this.accountId = accountId;
     }
 
 }

@@ -6,8 +6,8 @@ import io.watchdog.pullrequest.dto.slack.SlackChannelDTO;
 import io.watchdog.pullrequest.dto.slack.SlackTeamDTO;
 import io.watchdog.pullrequest.dto.slack.SlackUserDTO;
 import io.watchdog.pullrequest.exception.SlackTeamNotFoundException;
+import io.watchdog.pullrequest.model.BitbucketUser;
 import io.watchdog.pullrequest.model.CorrelatedUser;
-import io.watchdog.pullrequest.model.User;
 import io.watchdog.pullrequest.model.slack.SlackChannel;
 import io.watchdog.pullrequest.model.slack.SlackTeam;
 import io.watchdog.pullrequest.model.slack.SlackUser;
@@ -97,7 +97,7 @@ public class SlackTeamService {
     public List<String> getSlackMessages(List<CorrelatedUser> reviewers, String repoSlug) {
         List<String> reviewersUsername = reviewers.stream()
                 .map(CorrelatedUser::getBitbucketUser)
-                .map(User::getUsername)
+                .map(BitbucketUser::getAccountId)
                 .collect(Collectors.toList());
         List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewersUsername, repoSlug);
 
@@ -152,7 +152,7 @@ public class SlackTeamService {
                 .forEach(pullRequestDTO -> {
                     StringBuilder stringBuilder = new StringBuilder();
                     pullRequestDTO.getReviewers()
-                            .forEach((value) -> stringBuilder.append("<@").append(getSlackUserMention(bitbucketUserDTOs.stream(), value.getUsername())).append("> "));
+                            .forEach((value) -> stringBuilder.append("<@").append(getSlackUserMention(bitbucketUserDTOs.stream(), value.getAccountId())).append("> "));
                     messages.add(String.format(BODY_SLACK_MESSAGE_TEMPLATE, pullRequestDTO.getSourceBranch(), pullRequestDTO.getLink(), stringBuilder));
                 });
 
@@ -164,13 +164,13 @@ public class SlackTeamService {
         return String.format(messages.isEmpty() ? NO_PR_SLACK_MESSAGE_TEMPLATE : START_SLACK_MESSAGE_TEMPLATE, repoSlug);
     }
 
-    private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerUsername){
+    private String getSlackUserMention(Stream<CorrelatedUser> bitbucketUserDTOs, String reviewerAccountId){
         return bitbucketUserDTOs
                 .filter(user -> Objects.nonNull(user.getBitbucketUser()))
-                .filter(user -> Objects.nonNull(user.getBitbucketUser().getUsername()))
-                .filter(users -> users.getBitbucketUser().getUsername().equals(reviewerUsername))
+                .filter(user -> Objects.nonNull(user.getBitbucketUser().getAccountId()))
+                .filter(users -> users.getBitbucketUser().getAccountId().equals(reviewerAccountId))
                 .findFirst()
-                .orElse(new CorrelatedUser())
+                .orElse(new CorrelatedUser(new SlackUser("missingUser", "missingName", "missingEmail", "missingMention")))
                 .getSlackUser()
                 .getMention();
     }

@@ -17,6 +17,8 @@ import java.util.List;
 @Data
 @Document
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @CompoundIndex(name = "channel_name_slug_uniqe", unique = true, def = "{'name' : 1, 'channel' : 1, 'slug' : 1}")
 public class SlackTeam {
