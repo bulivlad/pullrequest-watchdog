@@ -13,12 +13,10 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,11 +33,13 @@ public class PullRequestRetrieveService {
 
     RestTemplate restTemplate;
     RepositoryConfig repositoryConfig;
+    BitBucketApiRestService bitBucketApiRestService;
 
     @Autowired
-    public PullRequestRetrieveService(RestTemplate restTemplate, RepositoryConfig repositoryConfig) {
+    public PullRequestRetrieveService(RestTemplate restTemplate, RepositoryConfig repositoryConfig, BitBucketApiRestService bitBucketApiRestService) {
         this.restTemplate = restTemplate;
         this.repositoryConfig = repositoryConfig;
+        this.bitBucketApiRestService = bitBucketApiRestService;
     }
 
     public Map<String, List<ReviewerDTO>> getUnapprovedPRsWithReviewers(List<String> reviewers) {
@@ -82,11 +82,7 @@ public class PullRequestRetrieveService {
         log.info("Getting Open PR's for {}", reviewers);
         String queryString = buildReviewersQueryString(reviewers);
         try {
-            PaginatedPullRequestDTO paginatedPullRequests = getPaginatedPullRequest(repoSlug, queryString);
-            log.info("Open PR's retrieved for {}", reviewers);
-            return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
-        } catch (ResourceAccessException ex){
-            PaginatedPullRequestDTO paginatedPullRequests = retryGettingPRs(repoSlug, queryString, 0);
+            PaginatedPullRequestDTO paginatedPullRequests = bitBucketApiRestService.fetchPaginatedPullRequest(getRepoSlug(repoSlug), queryString);
             log.info("Open PR's retrieved for {}", reviewers);
             return nonNull(paginatedPullRequests) ? paginatedPullRequests : new PaginatedPullRequestDTO();
         } catch (RestClientException ex) {
@@ -95,46 +91,10 @@ public class PullRequestRetrieveService {
         }
     }
 
-    private PaginatedPullRequestDTO getPaginatedPullRequest(String repoSlug, String queryString) {
-        return restTemplate.getForObject(
-                        repositoryConfig.getEndpoint() + queryString,
-                        PaginatedPullRequestDTO.class,
-                        repositoryConfig.getUsername(),
-                        getRepoSlug(repoSlug));
-    }
-
-    private PaginatedPullRequestDTO retryGettingPRs(String repoSlug, String queryString, int retries) {
-        waitBeforeRetry();
-        int timesToRetry = 5;
-        if (retries < timesToRetry) {
-            try {
-                return getPaginatedPullRequest(repoSlug, queryString);
-            } catch (ResourceAccessException e) { //NOSONAR
-                log.warn("Could not reach Repo when getting the PRS. Retrying.... Error: ", e);
-                retryGettingPRs(repoSlug, queryString, ++retries);
-            }
-        }
-        return new PaginatedPullRequestDTO();
-    }
-
-    private void waitBeforeRetry() {
-        try {
-            long timeToWaitBetweenTries = 500;
-            TimeUnit.SECONDS.sleep(timeToWaitBetweenTries);
-        } catch (InterruptedException e) { //NOSONAR
-            log.error("The wait between retries has been interrupted");
-        }
-    }
-
     private Optional<PullRequestDTO> fetchMemberDetailedPullRequest(Long pullRequestId, String repoSlug) {
         log.info("Getting PR with id {}", pullRequestId);
         try {
-            PullRequestDTO pullRequest = restTemplate.getForObject(
-                    repositoryConfig.getEndpoint() + "/{pullRequestId}",
-                    PullRequestDTO.class,
-                    repositoryConfig.getUsername(),
-                    getRepoSlug(repoSlug),
-                    pullRequestId);
+            PullRequestDTO pullRequest = bitBucketApiRestService.fetchMemberDetailedPullRequest(pullRequestId, getRepoSlug(repoSlug));
             pullRequest.setLink(String.format(
                     repositoryConfig.getPullRequestsUrl(),
                     repositoryConfig.getUsername(),
@@ -150,7 +110,7 @@ public class PullRequestRetrieveService {
     private Set<ReviewerDTO> getUsersToApprove(List<String> reviewers, PullRequestDTO pullRequestDTO) {
         return pullRequestDTO.getParticipants().stream()
                 .filter(participantDTO -> Role.REVIEWER.equals(participantDTO.getRole()))
-                .filter(participantDTO -> reviewers.contains(participantDTO.getReviewerDTO().getUsername()))
+                .filter(participantDTO -> reviewers.contains(participantDTO.getReviewerDTO().getAccountId()))
                 .filter(participantDTO -> !participantDTO.getApproved())
                 .map(ParticipantDTO::getReviewerDTO)
                 .collect(Collectors.toSet());
@@ -163,7 +123,7 @@ public class PullRequestRetrieveService {
     }
 
     private void appendReviewers(StringBuilder stringBuilder, String reviewer) {
-        stringBuilder.append("reviewers.username=\"");
+        stringBuilder.append("reviewers.account_id=\"");
         stringBuilder.append(reviewer);
         stringBuilder.append("\" OR ");
     }
