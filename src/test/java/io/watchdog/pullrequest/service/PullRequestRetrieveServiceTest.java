@@ -15,7 +15,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,21 +36,19 @@ import static org.mockito.Mockito.when;
 public class PullRequestRetrieveServiceTest {
 
     @Mock
-    RestTemplate restTemplate;
-    @Mock
     RepositoryConfig repositoryConfig;
+    @Mock
+    BitBucketApiRestService bitBucketApiRestService;
 
     @InjectMocks
     PullRequestRetrieveService pullRequestRetrieveService;
 
-    private static final String REPO_CONFIG_ENDPOINT = "https://dummy.com/repositories/{username}/{slug}/pullrequests";
     private static final String REVIEWERS_QUERY_STRING = "?pagelen=50&q=(reviewers.account_id=\"bb-accId1\" OR reviewers.account_id=\"bb-accId2\" OR reviewers.account_id=\"bb-accId3\" ) AND state=\"OPEN\"";
     private static final String SLUG = "dummy-slug";
     private static final String USERNAME = "dummy-username";
 
     @Before
     public void setup() {
-        when(repositoryConfig.getEndpoint()).thenReturn(REPO_CONFIG_ENDPOINT);
         when(repositoryConfig.getPullRequestsUrl()).thenReturn("https://dummy.com/%s/%s/pull-requests/%s");
         when(repositoryConfig.getSlug()).thenReturn(SLUG);
         when(repositoryConfig.getUsername()).thenReturn(USERNAME);
@@ -64,8 +61,8 @@ public class PullRequestRetrieveServiceTest {
         reviewerDTO.setUsername("bb-user1");
         reviewerDTO.setAccountId("bb-accId1");
 
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOSinglePR());
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(buildPullRequestDTOOneReviewer());
+        when(bitBucketApiRestService.fetchPaginatedPullRequest(SLUG, REVIEWERS_QUERY_STRING)).thenReturn(buildPaginatedPullRequestDTOSinglePR());
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(1L), eq(SLUG))).thenReturn(buildPullRequestDTOOneReviewer());
 
         Map<String, List<ReviewerDTO>> result = pullRequestRetrieveService.getUnapprovedPRsWithReviewers(reviewers);
 
@@ -86,13 +83,13 @@ public class PullRequestRetrieveServiceTest {
         reviewerDTO3.setAccountId("bb-accId3");
         List<ReviewerDTO> expected = Arrays.asList(reviewerDTO, reviewerDTO3);
 
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOMultiplePRs());
+        when(bitBucketApiRestService.fetchPaginatedPullRequest(SLUG, REVIEWERS_QUERY_STRING)).thenReturn(buildPaginatedPullRequestDTOMultiplePRs());
         PullRequestDTO prId1 = buildPullRequestDTOMultipleReviewers(1L, "origin/source-branch1");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(prId1);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(1L), eq(SLUG))).thenReturn(prId1);
         PullRequestDTO prId2 = buildPullRequestDTOMultipleReviewers(2L, "origin/source-branch2");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(2L))).thenReturn(prId2);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(2L), eq(SLUG))).thenReturn(prId2);
         PullRequestDTO prId3 = buildPullRequestDTOMultipleReviewers(3L, "origin/source-branch3");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(3L))).thenReturn(prId3);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(3L), eq(SLUG))).thenReturn(prId3);
 
         Map<String, List<ReviewerDTO>> result = pullRequestRetrieveService.getUnapprovedPRsWithReviewers(reviewers);
 
@@ -118,8 +115,8 @@ public class PullRequestRetrieveServiceTest {
 
         PullRequestDTO expected = buildPullRequestDTO(1L, "origin/source-branch", Arrays.asList(participantDTO1, participantDTO2), Collections.singletonList(reviewerDTO));
 
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOSinglePR());
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(buildPullRequestDTOOneReviewer());
+        when(bitBucketApiRestService.fetchPaginatedPullRequest(SLUG, REVIEWERS_QUERY_STRING)).thenReturn(buildPaginatedPullRequestDTOSinglePR());
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(1L), eq(SLUG))).thenReturn(buildPullRequestDTOOneReviewer());
 
         List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers, "dummy-slug");
 
@@ -140,13 +137,13 @@ public class PullRequestRetrieveServiceTest {
         PullRequestDTO expectedPr2 = buildPullRequestDTO(2L, "origin/source-branch-2", Arrays.asList(participantDTO1, participantDTO2, participantDTO3), Arrays.asList(participantDTO1.getReviewerDTO(), participantDTO3.getReviewerDTO()));
         PullRequestDTO expectedPr3 = buildPullRequestDTO(3L, "origin/source-branch-3", Arrays.asList(participantDTO1, participantDTO2, participantDTO3), Arrays.asList(participantDTO1.getReviewerDTO(), participantDTO3.getReviewerDTO()));
 
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + REVIEWERS_QUERY_STRING), eq(PaginatedPullRequestDTO.class), eq(USERNAME), eq(SLUG))).thenReturn(buildPaginatedPullRequestDTOMultiplePRs());
+        when(bitBucketApiRestService.fetchPaginatedPullRequest(SLUG, REVIEWERS_QUERY_STRING)).thenReturn(buildPaginatedPullRequestDTOMultiplePRs());
         PullRequestDTO prId1 = buildPullRequestDTOMultipleReviewers(1L, "origin/source-branch-1");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(1L))).thenReturn(prId1);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(1L), eq(SLUG))).thenReturn(prId1);
         PullRequestDTO prId2 = buildPullRequestDTOMultipleReviewers(2L, "origin/source-branch-2");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(2L))).thenReturn(prId2);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(2L), eq(SLUG))).thenReturn(prId2);
         PullRequestDTO prId3 = buildPullRequestDTOMultipleReviewers(3L, "origin/source-branch-3");
-        when(restTemplate.getForObject(eq(REPO_CONFIG_ENDPOINT + "/{pullRequestId}"), eq(PullRequestDTO.class), eq(USERNAME), eq(SLUG), eq(3L))).thenReturn(prId3);
+        when(bitBucketApiRestService.fetchMemberDetailedPullRequest(eq(3L), eq(SLUG))).thenReturn(prId3);
 
         List<PullRequestDTO> unapprovedPRs = pullRequestRetrieveService.getUnapprovedPRs(reviewers, "dummy-slug");
 
