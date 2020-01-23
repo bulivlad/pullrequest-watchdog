@@ -16,7 +16,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'io.watchdog.pullrequest'
-version = '1.0.1'
+version = '1.0.2'
 sourceCompatibility = 1.8
 
 repositories {
