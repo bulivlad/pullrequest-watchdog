@@ -107,7 +107,7 @@ if [[ ! -z "${BUILD_IMAGES}" ]]; then
 fi
 
 if [[ ! -z "${PUSH_IMAGES}" ]]; then
-    if [[ "${CURRENT_VERSION}" -eq "dev" ]]; then
+    if [[ "${CURRENT_VERSION}" == "dev" ]]; then
         echo -e "dev images will not be pushed"
         exit 0
     fi
