@@ -24,7 +24,7 @@ jobs:
           command: ./gradlew test --stacktrace
 
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
 
       - run:
           name: Build and publish Docker image
