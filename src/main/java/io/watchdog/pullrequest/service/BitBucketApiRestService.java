@@ -46,7 +46,7 @@ public class BitBucketApiRestService {
                     BitbucketUserDTOWrapper.class,
                     email);
             log.info("Got user info for {}", email);
-            return nonNull(userWrapper) ? userWrapper.getUser() : new BitbucketUserDTO();
+            return nonNull(userWrapper) && nonNull(userWrapper.getUser()) ? userWrapper.getUser() : new BitbucketUserDTO();
     }
 
     @Retryable(value = {ResourceAccessException.class}, backoff = @Backoff(delay = 500))
